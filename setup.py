@@ -5,7 +5,7 @@ setup(
     version='0.1.0',
     description='A Python client for the Flightradar24 API',
     author='Your Name',
-    author_email='your.email@example.com',
+    author_email='mattstiles@gmail.com',
     packages=find_packages(),
     install_requires=[
         'requests',
