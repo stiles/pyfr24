@@ -16,14 +16,14 @@ def main():
     # print("Live Flights:")
     # print(json.dumps(live_flights, indent=2))
     
-    # # Example B: Lookup basic flight summary for flight EK184 within a datetime range.
-    # summary_light = api.get_flight_summary_light(
-    #     flights="KE11",
-    #     flight_datetime_from="2025-02-14T01:17:14",
-    #     flight_datetime_to="2025-02-28T13:17:14"
-    # )
-    # print("Flight summary (light):")
-    # print(json.dumps(summary_light, indent=2))
+    # Example B: Lookup basic flight summary for flight DO61 within a datetime range.
+    summary_light = api.get_flight_summary_light(
+        flights="DO61",
+        flight_datetime_from="2025-03-28",
+        flight_datetime_to="2025-03-28"
+    )
+    print("Flight summary (light):")
+    print(json.dumps(summary_light, indent=2))
     
     # Example C: Get flight track details for a specific flight.
     # tracks = api.get_flight_tracks("39c5ea46")
@@ -31,9 +31,9 @@ def main():
     # print(json.dumps(tracks, indent=2))
 
     # Example D: Export flight data to CSV and GeoJSON.
-    flight_id = "39c59014"
-    output_directory = api.export_flight_data(flight_id)
-    print(f"Flight data exported to directory: {output_directory}")
+    # flight_id = "39c59014"
+    # output_directory = api.export_flight_data(flight_id)
+    # print(f"Flight data exported to directory: {output_directory}")
 
 if __name__ == "__main__":
     main()

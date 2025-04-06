@@ -19,6 +19,32 @@ class FR24API:
             "Authorization": f"Bearer {token}"
         }
     
+    def get_flight_summary_light(self, flights, flight_datetime_from, flight_datetime_to, **kwargs):
+        # Get basic flight summary information.
+        url = f"{self.base_url}/api/flight-summary/light"
+        params = {
+            "flights": flights,
+            "flight_datetime_from": flight_datetime_from,
+            "flight_datetime_to": flight_datetime_to
+        }
+        params.update(kwargs)
+        response = requests.get(url, headers=self.headers, params=params)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_flight_summary_full(self, flights, flight_datetime_from, flight_datetime_to, **kwargs):
+        # Get detailed flight summary information.
+        url = f"{self.base_url}/api/flight-summary/full"
+        params = {
+            "flights": flights,
+            "flight_datetime_from": flight_datetime_from,
+            "flight_datetime_to": flight_datetime_to
+        }
+        params.update(kwargs)
+        response = requests.get(url, headers=self.headers, params=params)
+        response.raise_for_status()
+        return response.json()
+    
     def get_live_flights_by_registration(self, registration, bounds=None):
         # Get live flights filtered by aircraft registration.
         url = f"{self.base_url}/api/live/flight-positions/light"
