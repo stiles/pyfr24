@@ -50,6 +50,29 @@ print(json.dumps(tracks, indent=2))
 
 You can also fetch detailed flight summaries and full airport data using the other available methods.
 
+# Roadmap
+
+This project is new and under development. Some features to tackle next: 
+
+- **More API coverage**  
+  Add support for more endpoints such as full flight positions, flight counts, historical endpoints and usage statistics
+
+- **Improve error handling**  
+  Enhance exception handling and logging and add support for retries in case of transient errors
+
+- **Add asynchronous support**  
+  Provide async methods using asyncio so users can integrate the client in asynchronous applications
+
+- **Add a CLI tool**  
+  Create a command-line interface for quick access to API functions without writing code
+
+- **Better docs**  
+  Improve docs with more examples and an API reference
+
+- **Caching and rate limit handling**  
+  Add caching support to reduce redundant API calls and build in rate limit awareness to prevent overuse
+
+
 ## Contributing
 
 Contributions are welcome. Please fork the repository and submit a pull request. Make sure to add tests for your changes and run tests with:
@@ -59,4 +82,4 @@ pytest tests/
 
 ## License
 
-This project is licensed under the MIT license.
+This project is licensed under the Creative Commons license.
