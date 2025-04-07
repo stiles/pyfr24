@@ -182,3 +182,6 @@ cython_debug/
 # Project specific
 data/
 *.log
+
+# Release documentation
+RELEASES.md

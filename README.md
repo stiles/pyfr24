@@ -17,6 +17,11 @@ To install, run:
 pip install -e .
 ```
 
+Or install directly from PyPI:
+```bash
+pip install pyfr24
+```
+
 ## How to use
 
 First, set the environment variable `FLIGHTRADAR_API_KEY` with your subscription key. For example:
@@ -265,6 +270,10 @@ Contributions are welcome. Please fork the repository and submit a pull request.
 python run_tests.py
 ```
 
+## Release Process
+
+For information about the release process, see [RELEASES.md](RELEASES.md).
+
 ## License
 
-This project is licensed under the Creative Commons license.
+This project is licensed under the MIT License.
