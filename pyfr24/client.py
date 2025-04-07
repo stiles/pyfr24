@@ -1,6 +1,8 @@
 import os
 import csv
 import json
+import time
+import logging
 import requests
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -8,9 +10,19 @@ import geopandas as gpd
 import contextily as ctx
 from shapely.geometry import Point, LineString
 import pandas as pd
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+from .exceptions import (
+    FR24Error, FR24AuthenticationError, FR24RateLimitError, 
+    FR24NotFoundError, FR24ServerError, FR24ClientError, 
+    FR24ValidationError, FR24ConnectionError
+)
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 class FR24API:
-    def __init__(self, token):
+    def __init__(self, token, max_retries=3, retry_backoff_factor=0.5):
         # Set the base URL and headers with your API token.
         self.base_url = "https://fr24api.flightradar24.com"
         self.headers = {
@@ -18,7 +30,73 @@ class FR24API:
             "Accept-Version": "v1",
             "Authorization": f"Bearer {token}"
         }
-    
+        
+        # Configure retry strategy
+        self.session = requests.Session()
+        retry_strategy = Retry(
+            total=max_retries,
+            backoff_factor=retry_backoff_factor,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+        
+        logger.info("FR24API client initialized")
+
+    def _make_request(self, method, url, **kwargs):
+        """
+        Make an HTTP request with error handling and retries.
+        
+        Args:
+            method: HTTP method (get, post, etc.)
+            url: URL to request
+            **kwargs: Additional arguments to pass to requests
+            
+        Returns:
+            Response object
+            
+        Raises:
+            FR24AuthenticationError: If authentication fails
+            FR24RateLimitError: If rate limit is exceeded
+            FR24NotFoundError: If resource is not found
+            FR24ServerError: If server error occurs
+            FR24ClientError: If client error occurs
+            FR24ConnectionError: If connection error occurs
+        """
+        try:
+            logger.debug(f"Making {method.upper()} request to {url}")
+            response = self.session.request(method, url, **kwargs)
+            
+            # Handle different HTTP status codes
+            if response.status_code == 401:
+                logger.error("Authentication failed")
+                raise FR24AuthenticationError("Authentication failed. Check your API token.")
+            elif response.status_code == 403:
+                logger.error("Access forbidden")
+                raise FR24AuthenticationError("Access forbidden. Check your API token permissions.")
+            elif response.status_code == 404:
+                logger.error(f"Resource not found: {url}")
+                raise FR24NotFoundError(f"Resource not found: {url}")
+            elif response.status_code == 429:
+                logger.error("Rate limit exceeded")
+                raise FR24RateLimitError("Rate limit exceeded. Try again later.")
+            elif response.status_code >= 500:
+                logger.error(f"Server error: {response.status_code}")
+                raise FR24ServerError(f"Server error: {response.status_code}")
+            elif response.status_code >= 400:
+                logger.error(f"Client error: {response.status_code}")
+                raise FR24ClientError(f"Client error: {response.status_code}")
+            
+            response.raise_for_status()
+            return response
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+            raise FR24ConnectionError(f"Connection error: {e}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error: {e}")
+            raise FR24Error(f"Request error: {e}")
+
     def get_flight_summary_light(self, flights, flight_datetime_from, flight_datetime_to, **kwargs):
         # Get basic flight summary information.
         url = f"{self.base_url}/api/flight-summary/light"
@@ -28,10 +106,9 @@ class FR24API:
             "flight_datetime_to": flight_datetime_to
         }
         params.update(kwargs)
-        response = requests.get(url, headers=self.headers, params=params)
-        response.raise_for_status()
+        response = self._make_request("get", url, headers=self.headers, params=params)
         return response.json()
-    
+
     def get_flight_summary_full(self, flights, flight_datetime_from, flight_datetime_to, **kwargs):
         # Get detailed flight summary information.
         url = f"{self.base_url}/api/flight-summary/full"
@@ -41,49 +118,43 @@ class FR24API:
             "flight_datetime_to": flight_datetime_to
         }
         params.update(kwargs)
-        response = requests.get(url, headers=self.headers, params=params)
-        response.raise_for_status()
+        response = self._make_request("get", url, headers=self.headers, params=params)
         return response.json()
-    
+
     def get_live_flights_by_registration(self, registration, bounds=None):
         # Get live flights filtered by aircraft registration.
         url = f"{self.base_url}/api/live/flight-positions/light"
         params = {"registrations": registration}
         if bounds:
             params["bounds"] = bounds
-        response = requests.get(url, headers=self.headers, params=params)
-        response.raise_for_status()
+        response = self._make_request("get", url, headers=self.headers, params=params)
         return response.json()
-    
+
     def get_airline_light(self, icao):
         # Get basic airline info by ICAO code.
         url = f"{self.base_url}/api/static/airlines/{icao}/light"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
+        response = self._make_request("get", url, headers=self.headers)
         return response.json()
-    
+
     def get_airport_full(self, code):
         # Get detailed airport info by IATA or ICAO code.
         url = f"{self.base_url}/api/static/airports/{code}/full"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
+        response = self._make_request("get", url, headers=self.headers)
         return response.json()
-    
+
     def get_flight_positions_light(self, bounds, **kwargs):
         # Get real-time flight positions within specified bounds.
         url = f"{self.base_url}/api/live/flight-positions/light"
         params = {"bounds": bounds}
         params.update(kwargs)
-        response = requests.get(url, headers=self.headers, params=params)
-        response.raise_for_status()
+        response = self._make_request("get", url, headers=self.headers, params=params)
         return response.json()
-    
+
     def get_flight_tracks(self, flight_id):
         # Get flight tracks (ADS-B pings) using the flight ID.
         url = f"{self.base_url}/api/flight-tracks"
         params = {"flight_id": flight_id}
-        response = requests.get(url, headers=self.headers, params=params)
-        response.raise_for_status()
+        response = self._make_request("get", url, headers=self.headers, params=params)
         return response.json()
 
     def enhanced_plot_flight(self, sorted_tracks, flight_id, fig_filename=None, figsize=(10,10), pad_factor=0.2, zoom=None):
@@ -94,7 +165,7 @@ class FR24API:
         # Convert track data to DataFrame then to GeoDataFrame
         df = pd.DataFrame(sorted_tracks)
         if df.empty:
-            print("No data available to plot.")
+            logger.warning("No data available to plot.")
             return
         # Create geometry column from lon, lat and set CRS to EPSG:4326.
         gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")
@@ -134,25 +205,25 @@ class FR24API:
             ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, reset_extent=False)
         
         ax.set_axis_off()
-        # ax.legend()
         plt.tight_layout()
         plt.title(f"Flight: {flight_id}")
         
         if fig_filename:
             os.makedirs(os.path.dirname(fig_filename), exist_ok=True)
             plt.savefig(fig_filename, dpi=300, bbox_inches="tight")
-            print(f"Plot saved as {fig_filename}")
+            logger.info(f"Plot saved as {fig_filename}")
 
     def export_flight_data(self, flight_id, output_dir=None):
         """
         Export flight track data to CSV, GeoJSON (points and line) and an enhanced plot.
-        Creates a directory named after the flight_id (or specified output_dir) and saves:
+        Creates a directory named data/flight_id (or specified output_dir) and saves:
           - data.csv: CSV file with flight track points.
           - points.geojson: GeoJSON FeatureCollection of each track point.
           - line.geojson: GeoJSON FeatureCollection with a LineString connecting the points.
           - plot.png: An enhanced map plot of the flight path.
         """
         # Fetch flight tracks.
+        logger.info(f"Fetching flight tracks for flight ID: {flight_id}")
         data = self.get_flight_tracks(flight_id)
         # Determine structure and extract tracks.
         if isinstance(data, list):
@@ -163,10 +234,11 @@ class FR24API:
         elif isinstance(data, dict):
             tracks = data.get("tracks", [])
         else:
-            raise ValueError("Unexpected data format")
+            logger.error(f"Unexpected data format for flight ID: {flight_id}")
+            raise FR24ValidationError("Unexpected data format")
         
         if not tracks:
-            print("No flight track data available for flight", flight_id)
+            logger.warning(f"No flight track data available for flight {flight_id}")
             return
 
         # Sort tracks by timestamp.
@@ -174,8 +246,9 @@ class FR24API:
         
         # Determine output directory.
         if output_dir is None:
-            output_dir = flight_id
+            output_dir = os.path.join("data", flight_id)
         os.makedirs(output_dir, exist_ok=True)
+        logger.info(f"Exporting flight data to directory: {output_dir}")
 
         # Export CSV.
         csv_file = os.path.join(output_dir, "data.csv")
@@ -186,7 +259,7 @@ class FR24API:
             for track in sorted_tracks:
                 row = {k: track.get(k, "") for k in fieldnames}
                 writer.writerow(row)
-        print(f"CSV data saved to {csv_file}")
+        logger.info(f"CSV data saved to {csv_file}")
 
         # Export GeoJSON points.
         points_geojson = {
@@ -206,7 +279,7 @@ class FR24API:
         points_file = os.path.join(output_dir, "points.geojson")
         with open(points_file, "w") as f:
             json.dump(points_geojson, f, indent=2)
-        print(f"GeoJSON points saved to {points_file}")
+        logger.info(f"GeoJSON points saved to {points_file}")
 
         # Export GeoJSON linestring.
         coordinates = []
@@ -229,7 +302,7 @@ class FR24API:
         line_file = os.path.join(output_dir, "line.geojson")
         with open(line_file, "w") as f:
             json.dump(line_geojson, f, indent=2)
-        print(f"GeoJSON line saved to {line_file}")
+        logger.info(f"GeoJSON line saved to {line_file}")
 
         # Create an enhanced plot.
         plot_file = os.path.join(output_dir, "plot.png")
