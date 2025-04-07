@@ -270,10 +270,6 @@ Contributions are welcome. Please fork the repository and submit a pull request.
 python run_tests.py
 ```
 
-## Release Process
-
-For information about the release process, see [RELEASES.md](RELEASES.md).
-
 ## License
 
 This project is licensed under the MIT License.
