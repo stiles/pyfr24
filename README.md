@@ -1,6 +1,6 @@
 # Pyfr24
 
-Pyfr24 is a powerful Python client for the [Flightradar24 API](https://fr24api.flightradar24.com/). This package provides a simple interface to fetch, plot and analyze flight data, including live flights, historical tracks, and detailed flight information. With Pyfr24, you can easily investigate incidents, export flight data in multiple formats (CSV, GeoJSON) and generate quick flight path plots. The package includes both a Python API and a command-line interface for quick access to flight data without writing code. The API requires a Flightradar24 subscription.
+Pyfr24 is a powerful Python client for the [Flightradar24 API](https://fr24api.flightradar24.com/). This package provides a simple interface to fetch, plot and analyze flight data, including live flights, historical tracks and detailed flight information. With Pyfr24, you can easily investigate incidents, export flight data in multiple formats (CSV, GeoJSON) and generate quick flight path plots. The package includes both a Python API and a command-line interface for quick access to flight data without writing code. The API requires a Flightradar24 subscription.
 
 ## Installation
 
@@ -60,7 +60,7 @@ print(json.dumps(tracks, indent=2))
 #   - data.csv: CSV of flight track points
 #   - points.geojson: GeoJSON of track points
 #   - line.geojson: GeoJSON LineString connecting the points
-#   - plot.png: An enhanced map plot of the flight path
+#   - plot.png: A quick map plot of the flight path
 output_dir = api.export_flight_data("39bebe6e")
 print(f"Flight data exported to directory: {output_dir}")
 ```
@@ -129,7 +129,7 @@ The client includes a logging configuration that can be customized:
 import logging
 from pyfr24 import configure_logging
 
-# Configure logging with default settings (INFO level, console output)
+# Configure logging with default settings
 configure_logging()
 
 # Configure logging with custom settings
@@ -140,12 +140,14 @@ configure_logging(
 )
 ```
 
-## Incident investigation
+## Case study: incident investigation
 
-Imagine you receive word that a Delta flight, DL2983, took off from DCA and came close to a military jet, D061, flying near the airport. Later, you learn it was actually an American Eagle flight, AA5308, that had a closer call. You can use Pyfr24 to investigate this incident by comparing flight summaries and track data. For each reported flight, you can:
+Imagine you receive word that a Delta flight, DL2983, took off from DCA and came close to a military jet, D061, flying near the airport. Later, you learn it was actually an American Eagle flight, AA5308, that had a closer call. You can use Pyfr24 to investigate this incident by comparing flight summaries and tracking data. 
 
-- Retrieve the flight summary to obtain the internal fr24_id.
-- Export the flight tracks (CSV, GeoJSON and an enhanced plot) for further analysis. The export functionality automatically saves files under a directory structure of the form data/flight_id.
+For each reported flight, you can:
+
+- Retrieve the flight summary to obtain the internal fr24_id for each flight and aircraft.
+- Export the flight tracks (CSV, GeoJSON and a quick plot for reference) for further analysis. The export functionality automatically saves files under a directory structure of the form data/flight_id.
 - Compare the exported maps and data to determine which flight path came closest to the military jet.
 
 Here's an example script for such an scenario:
