@@ -1,6 +1,16 @@
 # Pyfr24
 
-Pyfr24 is a Python client for the [Flightradar24 API](https://fr24api.flightradar24.com/). This package provides a simple interface to fetch, plot and analyze flight data, including live flights, historical tracks and detailed flight information. With Pyfr24, you can easily investigate incidents, export flight data in multiple formats (CSV, GeoJSON) and generate quick flight path plots. The package includes both a Python API and a command-line interface for quick access to flight data without writing code. The API requires a Flightradar24 subscription.
+Pyfr24 is a Python client for the [Flightradar24 API](https://fr24api.flightradar24.com/). This package provides a simple interface to fetch, plot and analyze flight data, including live flights, historical tracks and detailed flight information. With Pyfr24, you can easily investigate incidents, export flight data in multiple formats (CSV, GeoJSON, KML) and generate quick flight path plots. The package includes both a Python API and a command-line interface for quick access to flight data without writing code. The API requires a Flightradar24 subscription.
+
+## Features
+
+- Flight data retrieval
+- Live flight tracking
+- Flight track history
+- Airline and airport information
+- Export flight data to CSV, GeoJSON, KML and plot
+- Error handling and logging
+- Command-line interface
 
 ## Installation
 
@@ -65,9 +75,16 @@ print(json.dumps(tracks, indent=2))
 #   - data.csv: CSV of flight track points
 #   - points.geojson: GeoJSON of track points
 #   - line.geojson: GeoJSON LineString connecting the points
+#   - track.kml: Flight path in KML format
 #   - plot.png: A quick map plot of the flight path
 output_dir = api.export_flight_data("39bebe6e")
 print(f"Flight data exported to directory: {output_dir}")
+
+# Get airline information
+airline = api.get_airline_info("BAW")
+
+# Get airport information
+airport = api.get_airport_info("LHR")
 ```
 You can also fetch detailed flight summaries and full airport data using the other available methods.
 

@@ -105,6 +105,12 @@ def export_flight_command(args):
     try:
         output_dir = api.export_flight_data(args.flight_id, output_dir=args.output_dir)
         print(f"Flight data exported to directory: {output_dir}")
+        print("Files created:")
+        print(f"  - {os.path.join(output_dir, 'data.csv')}")
+        print(f"  - {os.path.join(output_dir, 'points.geojson')}")
+        print(f"  - {os.path.join(output_dir, 'line.geojson')}")
+        print(f"  - {os.path.join(output_dir, 'track.kml')}")
+        print(f"  - {os.path.join(output_dir, 'plot.png')}")
     except Exception as e:
         logger.error(f"Error exporting flight data: {e}")
         print(f"Error: {e}")
@@ -205,9 +211,9 @@ def create_parser():
     flight_tracks_parser.set_defaults(func=flight_tracks_command)
     
     # Export flight command
-    export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data")
+    export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data to CSV, GeoJSON, KML and plot")
     export_flight_parser.add_argument("--flight-id", required=True, help="Flight ID")
-    export_flight_parser.add_argument("--output-dir", help="Output directory")
+    export_flight_parser.add_argument("--output-dir", help="Output directory (default: data/flight_id)")
     export_flight_parser.set_defaults(func=export_flight_command)
     
     # Airline info command

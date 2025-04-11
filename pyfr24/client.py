@@ -21,6 +21,59 @@ from .exceptions import (
 # Configure logger
 logger = logging.getLogger(__name__)
 
+def _create_kml_from_tracks(tracks, flight_id):
+    """
+    Create a KML string from flight track data.
+    
+    Args:
+        tracks: List of track points
+        flight_id: Flight identifier for the KML name
+        
+    Returns:
+        str: KML string
+    """
+    kml_template = """<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>{flight_id}</name>
+    <Style id="yellowLineGreenPoly">
+      <LineStyle>
+        <color>7f00ffff</color>
+        <width>4</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>7f00ff00</color>
+      </PolyStyle>
+    </Style>
+    <Placemark>
+      <name>{flight_id}</name>
+      <styleUrl>#yellowLineGreenPoly</styleUrl>
+      <LineString>
+        <extrude>1</extrude>
+        <tessellate>1</tessellate>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates>
+{coordinates}
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>"""
+
+    # Convert track points to KML coordinates
+    coordinates = []
+    for track in tracks:
+        lon = track.get('lon')
+        lat = track.get('lat')
+        alt = track.get('alt', 0)  # Default to 0 if altitude not available
+        if lon is not None and lat is not None:
+            coordinates.append(f"{lon},{lat},{alt}")
+    
+    return kml_template.format(
+        flight_id=flight_id,
+        coordinates="\n".join(coordinates)
+    )
+
 class FR24API:
     def __init__(self, token, max_retries=3, retry_backoff_factor=0.5):
         # Set the base URL and headers with your API token.
@@ -215,11 +268,12 @@ class FR24API:
 
     def export_flight_data(self, flight_id, output_dir=None):
         """
-        Export flight track data to CSV, GeoJSON (points and line) and an enhanced plot.
+        Export flight track data to CSV, GeoJSON (points and line), KML and an enhanced plot.
         Creates a directory named data/flight_id (or specified output_dir) and saves:
           - data.csv: CSV file with flight track points.
           - points.geojson: GeoJSON FeatureCollection of each track point.
           - line.geojson: GeoJSON FeatureCollection with a LineString connecting the points.
+          - track.kml: KML file with the flight path.
           - plot.png: An enhanced map plot of the flight path.
         """
         # Fetch flight tracks.
@@ -303,6 +357,13 @@ class FR24API:
         with open(line_file, "w") as f:
             json.dump(line_geojson, f, indent=2)
         logger.info(f"GeoJSON line saved to {line_file}")
+
+        # Export KML
+        kml_content = _create_kml_from_tracks(sorted_tracks, flight_id)
+        kml_file = os.path.join(output_dir, "track.kml")
+        with open(kml_file, "w") as f:
+            f.write(kml_content)
+        logger.info(f"KML file saved to {kml_file}")
 
         # Create an enhanced plot.
         plot_file = os.path.join(output_dir, "plot.png")
