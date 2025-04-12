@@ -34,9 +34,25 @@ pip install pyfr24
 
 ## How to use
 
-First, set the environment variable `FLIGHTRADAR_API_KEY` with your subscription key. For example:
+### API Token
+
+You can provide your Flightradar24 API token in one of three ways:
+
+1. **Command line argument** (easiest for one-time use):
 ```bash
-export FLIGHTRADAR_API_KEY="your_subscription_key"
+pyfr24 --token "your_api_token" flight-summary --flight BA123 --from-date "2023-01-01T00:00:00Z" --to-date "2023-01-01T23:59:59Z"
+```
+
+2. **Environment variable** (good for repeated use):
+```bash
+export FLIGHTRADAR_API_KEY="your_api_token"
+pyfr24 flight-summary --flight BA123 --from-date "2023-01-01T00:00:00Z" --to-date "2023-01-01T23:59:59Z"
+```
+
+3. **Interactive prompt** (when no token is provided):
+```bash
+pyfr24 flight-summary --flight BA123 --from-date "2023-01-01T00:00:00Z" --to-date "2023-01-01T23:59:59Z"
+Please enter your Flightradar24 API token: your_api_token
 ```
 
 ### Using the Python API
@@ -90,32 +106,59 @@ You can also fetch detailed flight summaries and full airport data using the oth
 
 ### Using the command-line interface
 
-Pyfr24 also provides a command-line interface for quick access to the API:
+Pyfr24 provides a command-line interface for quick access to the API. All commands support both long and short option forms:
 
 ```bash
 # Get flight summary
-pyfr24 flight-summary --flight AA123 --from-date "2023-01-01T00:00:00Z" --to-date "2023-01-01T23:59:59Z"
+pyfr24 flight-summary -F AA123 -f "2023-01-01" -t "2023-01-01"
+# or
+pyfr24 flight-summary --flight AA123 --from-date "2023-01-01" --to-date "2023-01-01"
 
 # Get live flights for an aircraft
+pyfr24 live-flights -R N12345
+# or
 pyfr24 live-flights --registration N12345
 
 # Get flight tracks
+pyfr24 flight-tracks -i 39a84c3c
+# or
 pyfr24 flight-tracks --flight-id 39a84c3c
 
 # Export flight data
+pyfr24 export-flight -i 39a84c3c -o data/flight_39a84c3c
+# or
 pyfr24 export-flight --flight-id 39a84c3c --output-dir data/flight_39a84c3c
 
 # Get airline information
+pyfr24 airline-info -i AAL
+# or
 pyfr24 airline-info --icao AAL
 
 # Get airport information
+pyfr24 airport-info -c JFK
+# or
 pyfr24 airport-info --code JFK
 
-# Get flight positions within a bounding box
-pyfr24 flight-positions --bounds "40.0,-74.0,41.0,-73.0"
+# Get flight positions within a bounding box (Los Angeles area)
+pyfr24 flight-positions -b "33.5,-118.8,34.5,-117.5"
+# or
+pyfr24 flight-positions --bounds "33.5,-118.8,34.5,-117.5"
+
+# Get flight IDs for an aircraft registration
+pyfr24 flight-ids -R N216MH -f "2025-01-01" -t "2025-04-10"
+# or
+pyfr24 flight-ids --registration N216MH --from-date "2025-01-01" --to-date "2025-04-10"
+# Save results to a file
+pyfr24 flight-ids -R N216MH -f "2025-01-01" -t "2025-04-10" -o flight_ids.json
 ```
 
-For more options, use the `--help` flag:
+Common options available for all commands:
+- `-t, --token`: API token (can also be set via FLIGHTRADAR_API_KEY env var)
+- `-l, --log-level`: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- `-f, --log-file`: Log file path
+- `-o, --output`: Output file path (JSON)
+
+For more options and detailed help, use:
 ```bash
 pyfr24 --help
 pyfr24 flight-summary --help

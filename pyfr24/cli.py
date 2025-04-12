@@ -17,12 +17,22 @@ def setup_logging(args):
     configure_logging(level=level, log_file=args.log_file)
     return logging.getLogger(__name__)
 
-def get_api_client(args):
-    """Get an API client instance using the provided token or environment variable."""
-    token = args.token or os.environ.get("FLIGHTRADAR_API_KEY")
+def get_client(args):
+    """Get an API client instance."""
+    # Try to get token from command line argument first
+    token = args.token
+    
+    # If not provided, try environment variable
     if not token:
-        print("Error: No API token provided. Set FLIGHTRADAR_API_KEY environment variable or use --token.")
-        sys.exit(1)
+        token = os.environ.get("FLIGHTRADAR_API_KEY")
+    
+    # If still not found, prompt user
+    if not token:
+        token = input("Please enter your Flightradar24 API token: ")
+    
+    if not token:
+        raise ValueError("No API token provided. Please set FLIGHTRADAR_API_KEY environment variable or use --token option.")
+    
     return FR24API(token)
 
 def format_json(data):
@@ -32,7 +42,7 @@ def format_json(data):
 def flight_summary_command(args):
     """Handle the flight summary command."""
     logger = setup_logging(args)
-    api = get_api_client(args)
+    api = get_client(args)
     
     try:
         if args.full:
@@ -62,7 +72,7 @@ def flight_summary_command(args):
 def live_flights_command(args):
     """Handle the live flights command."""
     logger = setup_logging(args)
-    api = get_api_client(args)
+    api = get_client(args)
     
     try:
         result = api.get_live_flights_by_registration(args.registration)
@@ -81,7 +91,7 @@ def live_flights_command(args):
 def flight_tracks_command(args):
     """Handle the flight tracks command."""
     logger = setup_logging(args)
-    api = get_api_client(args)
+    api = get_client(args)
     
     try:
         result = api.get_flight_tracks(args.flight_id)
@@ -100,7 +110,7 @@ def flight_tracks_command(args):
 def export_flight_command(args):
     """Handle the export flight command."""
     logger = setup_logging(args)
-    api = get_api_client(args)
+    api = get_client(args)
     
     try:
         output_dir = api.export_flight_data(args.flight_id, output_dir=args.output_dir)
@@ -119,7 +129,7 @@ def export_flight_command(args):
 def airline_info_command(args):
     """Handle the airline info command."""
     logger = setup_logging(args)
-    api = get_api_client(args)
+    api = get_client(args)
     
     try:
         result = api.get_airline_light(args.icao)
@@ -138,7 +148,7 @@ def airline_info_command(args):
 def airport_info_command(args):
     """Handle the airport info command."""
     logger = setup_logging(args)
-    api = get_api_client(args)
+    api = get_client(args)
     
     try:
         result = api.get_airport_full(args.code)
@@ -157,7 +167,7 @@ def airport_info_command(args):
 def flight_positions_command(args):
     """Handle the flight positions command."""
     logger = setup_logging(args)
-    api = get_api_client(args)
+    api = get_client(args)
     
     try:
         result = api.get_flight_positions_light(args.bounds)
@@ -173,6 +183,29 @@ def flight_positions_command(args):
         print(f"Error: {e}")
         sys.exit(1)
 
+def flight_ids_command(args):
+    """Handle the flight IDs command."""
+    logger = setup_logging(args)
+    api = get_client(args)
+    
+    try:
+        flight_ids = api.get_flight_ids_by_registration(
+            args.registration,
+            args.from_date,
+            args.to_date
+        )
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                json.dump(flight_ids, f, indent=2)
+            print(f"Flight IDs saved to {args.output}")
+        else:
+            print(format_json(flight_ids))
+    except Exception as e:
+        logger.error(f"Error fetching flight IDs: {e}")
+        print(f"Error: {e}")
+        sys.exit(1)
+
 def create_parser():
     """Create the command-line argument parser."""
     parser = argparse.ArgumentParser(
@@ -181,59 +214,67 @@ def create_parser():
     )
     
     # Global arguments
-    parser.add_argument("--token", help="API token (can also be set via FLIGHTRADAR_API_KEY env var)")
-    parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    parser.add_argument("-t", "--token", help="API token (can also be set via FLIGHTRADAR_API_KEY env var)")
+    parser.add_argument("-l", "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                         help="Logging level")
-    parser.add_argument("--log-file", help="Log file path")
+    parser.add_argument("-f", "--log-file", help="Log file path")
     
     # Create subparsers for different commands
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
     
     # Flight summary command
-    flight_summary_parser = subparsers.add_parser("flight-summary", help="Get flight summary")
-    flight_summary_parser.add_argument("--flight", required=True, help="Flight number or callsign")
-    flight_summary_parser.add_argument("--from-date", required=True, help="Start date/time (ISO format)")
-    flight_summary_parser.add_argument("--to-date", required=True, help="End date/time (ISO format)")
+    flight_summary_parser = subparsers.add_parser("flight-summary", help="Get flight summary information")
+    flight_summary_parser.add_argument("-F", "--flight", required=True, help="Flight number or callsign")
+    flight_summary_parser.add_argument("-f", "--from-date", required=True, help="Start date/time (YYYY-MM-DD)")
+    flight_summary_parser.add_argument("-t", "--to-date", required=True, help="End date/time (YYYY-MM-DD)")
     flight_summary_parser.add_argument("--full", action="store_true", help="Get full summary instead of light")
-    flight_summary_parser.add_argument("--output", help="Output file path (JSON)")
+    flight_summary_parser.add_argument("-o", "--output", help="Output file path (JSON)")
     flight_summary_parser.set_defaults(func=flight_summary_command)
     
     # Live flights command
-    live_flights_parser = subparsers.add_parser("live-flights", help="Get live flights by registration")
-    live_flights_parser.add_argument("--registration", required=True, help="Aircraft registration")
-    live_flights_parser.add_argument("--output", help="Output file path (JSON)")
+    live_flights_parser = subparsers.add_parser("live-flights", help="Get live flights by aircraft registration")
+    live_flights_parser.add_argument("-R", "--registration", required=True, help="Aircraft registration (e.g., N12345)")
+    live_flights_parser.add_argument("-o", "--output", help="Output file path (JSON)")
     live_flights_parser.set_defaults(func=live_flights_command)
     
     # Flight tracks command
-    flight_tracks_parser = subparsers.add_parser("flight-tracks", help="Get flight tracks")
-    flight_tracks_parser.add_argument("--flight-id", required=True, help="Flight ID")
-    flight_tracks_parser.add_argument("--output", help="Output file path (JSON)")
+    flight_tracks_parser = subparsers.add_parser("flight-tracks", help="Get detailed flight track data")
+    flight_tracks_parser.add_argument("-i", "--flight-id", required=True, help="Flight ID (e.g., 39a84c3c)")
+    flight_tracks_parser.add_argument("-o", "--output", help="Output file path (JSON)")
     flight_tracks_parser.set_defaults(func=flight_tracks_command)
     
     # Export flight command
-    export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data to CSV, GeoJSON, KML and plot")
-    export_flight_parser.add_argument("--flight-id", required=True, help="Flight ID")
-    export_flight_parser.add_argument("--output-dir", help="Output directory (default: data/flight_id)")
+    export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data to multiple formats")
+    export_flight_parser.add_argument("-i", "--flight-id", required=True, help="Flight ID (e.g., 39a84c3c)")
+    export_flight_parser.add_argument("-o", "--output-dir", help="Output directory (default: data/flight_id)")
     export_flight_parser.set_defaults(func=export_flight_command)
     
     # Airline info command
     airline_info_parser = subparsers.add_parser("airline-info", help="Get airline information")
-    airline_info_parser.add_argument("--icao", required=True, help="Airline ICAO code")
-    airline_info_parser.add_argument("--output", help="Output file path (JSON)")
+    airline_info_parser.add_argument("-i", "--icao", required=True, help="Airline ICAO code (e.g., AAL)")
+    airline_info_parser.add_argument("-o", "--output", help="Output file path (JSON)")
     airline_info_parser.set_defaults(func=airline_info_command)
     
     # Airport info command
     airport_info_parser = subparsers.add_parser("airport-info", help="Get airport information")
-    airport_info_parser.add_argument("--code", required=True, help="Airport IATA or ICAO code")
-    airport_info_parser.add_argument("--output", help="Output file path (JSON)")
+    airport_info_parser.add_argument("-c", "--code", required=True, help="Airport IATA or ICAO code (e.g., JFK)")
+    airport_info_parser.add_argument("-o", "--output", help="Output file path (JSON)")
     airport_info_parser.set_defaults(func=airport_info_command)
     
     # Flight positions command
-    flight_positions_parser = subparsers.add_parser("flight-positions", help="Get flight positions")
-    flight_positions_parser.add_argument("--bounds", required=True, 
-                                        help="Bounding box (format: minLat,minLon,maxLat,maxLon)")
-    flight_positions_parser.add_argument("--output", help="Output file path (JSON)")
+    flight_positions_parser = subparsers.add_parser("flight-positions", help="Get flight positions within bounds")
+    flight_positions_parser.add_argument("-b", "--bounds", required=True, 
+                                       help="Bounding box coordinates (lat1,lon1,lat2,lon2)")
+    flight_positions_parser.add_argument("-o", "--output", help="Output file path (JSON)")
     flight_positions_parser.set_defaults(func=flight_positions_command)
+    
+    # Flight IDs command
+    flight_ids_parser = subparsers.add_parser("flight-ids", help="Get flight IDs for an aircraft registration")
+    flight_ids_parser.add_argument("-R", "--registration", required=True, help="Aircraft registration (e.g., N12345)")
+    flight_ids_parser.add_argument("-f", "--from-date", required=True, help="Start date (YYYY-MM-DD)")
+    flight_ids_parser.add_argument("-t", "--to-date", required=True, help="End date (YYYY-MM-DD)")
+    flight_ids_parser.add_argument("-o", "--output", help="Output file path (JSON)")
+    flight_ids_parser.set_defaults(func=flight_ids_command)
     
     return parser
 
