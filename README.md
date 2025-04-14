@@ -1,6 +1,12 @@
 # Pyfr24
 
+[![Documentation Status](https://readthedocs.org/projects/pyfr24/badge/?version=latest)](https://pyfr24.readthedocs.io/en/latest/?badge=latest)
+
 Pyfr24 is a Python client for the [Flightradar24 API](https://fr24api.flightradar24.com/). This package provides a simple interface to fetch, plot and analyze flight data, including live flights, historical tracks and detailed flight information. With Pyfr24, you can easily investigate incidents, export flight data in multiple formats (CSV, GeoJSON, KML) and generate quick flight path plots. The package includes both a Python API and a command-line interface for quick access to flight data without writing code. The API requires a Flightradar24 subscription.
+
+## Documentation
+
+Full documentation is available at [https://pyfr24.readthedocs.io/](https://pyfr24.readthedocs.io/)
 
 ## Features
 
