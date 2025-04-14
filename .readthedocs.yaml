@@ -9,7 +9,7 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.8"
+    python: "3.11"
   jobs:
     post_create_environment:
       # Install poetry and dependencies
@@ -25,4 +25,12 @@ python:
   install:
     - requirements: docs/requirements.txt
     - method: pip
-      path: . 
+    - path: .
+
+formats:
+  - pdf
+  - epub
+  - htmlzip
+
+sphinx:
+  configuration: docs/conf.py 
