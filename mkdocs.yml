@@ -4,6 +4,9 @@ site_author: Matt Stiles
 repo_url: https://github.com/mstiles/pyfr24
 repo_name: mstiles/pyfr24
 
+# Ensure proper URL handling
+use_directory_urls: true
+
 theme:
   name: material
   palette:
