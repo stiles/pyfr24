@@ -15,6 +15,7 @@ build:
 mkdocs:
   configuration: mkdocs.yml
   fail_on_warning: false
+  strict: false
 
 # Python requirements for building docs
 python:
@@ -27,7 +28,4 @@ python:
 formats:
   - pdf
   - epub
-  - htmlzip
-
-sphinx:
-  configuration: docs/conf.py 
+  - htmlzip 
