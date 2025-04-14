@@ -108,19 +108,25 @@ def flight_tracks_command(args):
         sys.exit(1)
 
 def export_flight_command(args):
-    """Handle the export flight command."""
+    """Export flight data to CSV, GeoJSON, KML and plot."""
     logger = setup_logging(args)
     api = get_client(args)
-    
     try:
-        output_dir = api.export_flight_data(args.flight_id, output_dir=args.output_dir)
+        output_dir = api.export_flight_data(
+            args.flight_id, 
+            output_dir=args.output_dir,
+            background=args.background,
+            orientation=args.orientation
+        )
         print(f"Flight data exported to directory: {output_dir}")
         print("Files created:")
-        print(f"  - {os.path.join(output_dir, 'data.csv')}")
-        print(f"  - {os.path.join(output_dir, 'points.geojson')}")
-        print(f"  - {os.path.join(output_dir, 'line.geojson')}")
-        print(f"  - {os.path.join(output_dir, 'track.kml')}")
-        print(f"  - {os.path.join(output_dir, 'plot.png')}")
+        print("  - data.csv: CSV of flight track points")
+        print("  - points.geojson: GeoJSON of track points")
+        print("  - line.geojson: GeoJSON LineString connecting the points")
+        print("  - track.kml: Flight path in KML format")
+        print("  - map.png: Map visualization of the flight path")
+        print("  - speed.png: Line chart of speed over time")
+        print("  - altitude.png: Line chart of altitude over time")
     except Exception as e:
         logger.error(f"Error exporting flight data: {e}")
         print(f"Error: {e}")
@@ -244,9 +250,11 @@ def create_parser():
     flight_tracks_parser.set_defaults(func=flight_tracks_command)
     
     # Export flight command
-    export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data to multiple formats")
-    export_flight_parser.add_argument("-i", "--flight-id", required=True, help="Flight ID (e.g., 39a84c3c)")
-    export_flight_parser.add_argument("-o", "--output-dir", help="Output directory (default: data/flight_id)")
+    export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data to CSV, GeoJSON, KML and plot")
+    export_flight_parser.add_argument("-i", "--flight-id", required=True, help="Flight ID")
+    export_flight_parser.add_argument("-o", "--output-dir", help="Output directory path")
+    export_flight_parser.add_argument("--background", choices=['carto', 'osm', 'stamen', 'esri'], default='carto', help="Map background provider")
+    export_flight_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], default='horizontal', help="Map orientation (16:9, 9:16, or auto-detect)")
     export_flight_parser.set_defaults(func=export_flight_command)
     
     # Airline info command

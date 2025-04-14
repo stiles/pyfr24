@@ -1,0 +1,75 @@
+site_name: Pyfr24
+site_description: Python client for the Flightradar24 API with CLI support
+site_author: Matt Stiles
+repo_url: https://github.com/mstiles/pyfr24
+repo_name: mstiles/pyfr24
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: orange
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: orange
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [pyfr24]
+          options:
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Usage:
+    - Quick Start: usage/quickstart.md
+    - CLI Reference: usage/cli.md
+    - Python API: usage/api.md
+    - Examples: usage/examples.md
+  - Features:
+    - Flight Data: features/flight-data.md
+    - Map Visualization: features/map-visualization.md
+    - Data Export: features/data-export.md
+  - API Reference:
+    - Client: reference/client.md
+    - CLI: reference/cli.md
+    - Exceptions: reference/exceptions.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md 

@@ -6,6 +6,7 @@ import logging
 import requests
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.font_manager as fm
 import geopandas as gpd
 import contextily as ctx
 from shapely.geometry import Point, LineString
@@ -17,9 +18,30 @@ from .exceptions import (
     FR24NotFoundError, FR24ServerError, FR24ClientError, 
     FR24ValidationError, FR24ConnectionError
 )
+import matplotlib.dates as mdates
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+# Configure default font
+def _configure_font():
+    """Configure the default font for plots."""
+    # Try to find Roboto in system fonts
+    roboto_font = None
+    for font in fm.findSystemFonts():
+        if 'Roboto' in font:
+            roboto_font = font
+            break
+    
+    # If Roboto not found, use the default sans-serif font
+    if roboto_font:
+        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.sans-serif'] = ['Roboto']
+    else:
+        logger.warning("Roboto font not found. Using system default sans-serif font.")
+
+# Configure font when module is imported
+_configure_font()
 
 def _create_kml_from_tracks(tracks, flight_id):
     """
@@ -231,71 +253,141 @@ class FR24API:
         response = self._make_request("get", url, headers=self.session.headers, params=params)
         return response.json()
 
-    def enhanced_plot_flight(self, sorted_tracks, flight_id, fig_filename=None, figsize=(10,10), pad_factor=0.2, zoom=None):
+    def enhanced_plot_flight(self, sorted_tracks, flight_id, fig_filename=None, orientation='horizontal', pad_factor=0.2, zoom=None, background='carto'):
         """
         Enhanced plot of flight data using geopandas and contextily.
         Converts the track list into a GeoDataFrame, adds a basemap and plots points and a connecting line.
+        
+        Args:
+            sorted_tracks: List of track points
+            flight_id: Flight identifier
+            fig_filename: Output filename for the plot
+            orientation: Plot orientation ('horizontal', 'vertical', or 'auto'). 
+                       'horizontal' uses 16:9 aspect ratio (default)
+                       'vertical' uses 9:16 aspect ratio
+                       'auto' will choose based on the flight path direction
+            pad_factor: Padding around the flight path
+            zoom: Zoom level for the basemap (if None, will be automatically determined)
+            background: Background map provider ('carto', 'osm', 'stamen', 'esri')
         """
+        self.logger.debug(f"Starting enhanced_plot_flight with {len(sorted_tracks)} track points")
+        
         # Convert track data to DataFrame then to GeoDataFrame
         df = pd.DataFrame(sorted_tracks)
         if df.empty:
             self.logger.warning("No data available to plot.")
             return
-        # Create geometry column from lon, lat and set CRS to EPSG:4326.
-        gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")
-        # For a single flight, add a constant flight_leg column.
-        gdf["flight_leg"] = "flight1"
-        # Reproject to Web Mercator.
-        gdf_plot = gdf.to_crs(epsg=3857)
+            
+        self.logger.debug(f"DataFrame created with columns: {df.columns.tolist()}")
         
-        # Create figure and axis.
+        # Create geometry column from lon, lat and set CRS to EPSG:4326.
+        try:
+            gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")
+            self.logger.debug("GeoDataFrame created successfully")
+        except Exception as e:
+            self.logger.error(f"Error creating GeoDataFrame: {e}")
+            return
+            
+        # Reproject to Web Mercator.
+        try:
+            gdf_plot = gdf.to_crs(epsg=3857)
+            self.logger.debug("Data reprojected to Web Mercator")
+        except Exception as e:
+            self.logger.error(f"Error reprojecting data: {e}")
+            return
+
+        # Determine orientation if 'auto'
+        if orientation == 'auto':
+            # Get the bounding box
+            xmin, ymin, xmax, ymax = gdf_plot.total_bounds
+            width = xmax - xmin
+            height = ymax - ymin
+            # Choose orientation based on which dimension is larger
+            orientation = 'horizontal' if width > height else 'vertical'
+            self.logger.debug(f"Auto-detected orientation: {orientation}")
+
+        # Set figure size based on orientation
+        if orientation == 'vertical':
+            figsize = (9, 16)
+        else:  # horizontal
+            figsize = (16, 9)
+        
+        # Create figure and axis with appropriate aspect ratio
         fig, ax = plt.subplots(figsize=figsize)
         
-        # Use a colormap for the flight leg.
-        unique_legs = gdf_plot["flight_leg"].unique()
-        cmap = plt.get_cmap("tab10", len(unique_legs))
-        norm = mcolors.Normalize(vmin=0, vmax=len(unique_legs))
-        colors = {leg: cmap(norm(i)) for i, leg in enumerate(unique_legs)}
-        
-        # Plot points per flight leg.
-        for leg, group in gdf_plot.groupby("flight_leg"):
-            group.plot(ax=ax, marker="o", color=colors[leg], markersize=5, label=leg)
-        
-        # Plot a connecting line.
-        ax.plot(gdf_plot.geometry.x, gdf_plot.geometry.y, color="black", linewidth=2, label="Flight path")
+        # Plot only the connecting line in orange (#f18851) without any points
+        self.logger.debug("Plotting connecting line")
+        ax.plot(gdf_plot.geometry.x, gdf_plot.geometry.y, color="#f18851", linewidth=2, solid_capstyle='round', solid_joinstyle='round')
         
         # Expand plot bounds for context.
-        xmin, ymin, xmax, ymax = gdf_plot.total_bounds
-        x_pad = (xmax - xmin) * pad_factor
-        y_pad = (ymax - ymin) * pad_factor
-        extent = [xmin - x_pad, ymin - y_pad, xmax + x_pad, ymax + y_pad]
-        ax.set_xlim(extent[0], extent[2])
-        ax.set_ylim(extent[1], extent[3])
+        try:
+            xmin, ymin, xmax, ymax = gdf_plot.total_bounds
+            self.logger.debug(f"Plot bounds: xmin={xmin}, ymin={ymin}, xmax={xmax}, ymax={ymax}")
+            x_pad = (xmax - xmin) * pad_factor
+            y_pad = (ymax - ymin) * pad_factor
+            extent = [xmin - x_pad, ymin - y_pad, xmax + x_pad, ymax + y_pad]
+            ax.set_xlim(extent[0], extent[2])
+            ax.set_ylim(extent[1], extent[3])
+            
+            # Force aspect ratio to match figure size
+            ax.set_aspect('equal')
+        except Exception as e:
+            self.logger.error(f"Error setting plot bounds: {e}")
+            return
         
-        # Add a basemap.
-        if zoom is not None:
-            ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, zoom=zoom, reset_extent=False)
-        else:
-            ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, reset_extent=False)
+        # Add a basemap based on the selected provider
+        try:
+            # If zoom is None, don't pass it to add_basemap
+            basemap_kwargs = {'reset_extent': False}
+            if zoom is not None:
+                basemap_kwargs['zoom'] = zoom
+                
+            if background.lower() == 'osm':
+                ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik, **basemap_kwargs)
+            elif background.lower() == 'stamen':
+                ctx.add_basemap(ax, source=ctx.providers.Stamen.Terrain, **basemap_kwargs)
+            elif background.lower() == 'esri':
+                ctx.add_basemap(ax, source=ctx.providers.Esri.WorldTopoMap, **basemap_kwargs)
+            else:  # default to carto
+                ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, **basemap_kwargs)
+            self.logger.debug(f"Basemap added with provider: {background}")
+        except Exception as e:
+            self.logger.error(f"Error adding basemap: {e}")
+            return
         
         ax.set_axis_off()
         plt.tight_layout()
         plt.title(f"Flight: {flight_id}")
         
         if fig_filename:
-            os.makedirs(os.path.dirname(fig_filename), exist_ok=True)
-            plt.savefig(fig_filename, dpi=300, bbox_inches="tight")
-            self.logger.info(f"Plot saved as {fig_filename}")
+            try:
+                os.makedirs(os.path.dirname(fig_filename), exist_ok=True)
+                plt.savefig(fig_filename, dpi=300, bbox_inches="tight", pad_inches=0)
+                self.logger.info(f"Plot saved as {fig_filename}")
+            except Exception as e:
+                self.logger.error(f"Error saving plot: {e}")
+                return
 
-    def export_flight_data(self, flight_id, output_dir=None):
+    def export_flight_data(self, flight_id, output_dir=None, background='carto', orientation='horizontal'):
         """
-        Export flight track data to CSV, GeoJSON (points and line), KML and an enhanced plot.
+        Export flight track data to CSV, GeoJSON (points and line), KML and visualizations.
         Creates a directory named data/flight_id (or specified output_dir) and saves:
           - data.csv: CSV file with flight track points.
           - points.geojson: GeoJSON FeatureCollection of each track point.
           - line.geojson: GeoJSON FeatureCollection with a LineString connecting the points.
           - track.kml: KML file with the flight path.
-          - plot.png: An enhanced map plot of the flight path.
+          - map.png: A map visualization of the flight path.
+          - speed.png: A line chart of speed over time.
+          - altitude.png: A line chart of altitude over time.
+          
+        Args:
+            flight_id: Flight identifier
+            output_dir: Output directory path
+            background: Background map provider ('carto', 'osm', 'stamen', 'esri')
+            orientation: Plot orientation ('horizontal', 'vertical', or 'auto'). 
+                       'horizontal' uses 16:9 aspect ratio (default)
+                       'vertical' uses 9:16 aspect ratio
+                       'auto' will choose based on the flight path direction
         """
         # Fetch flight tracks.
         self.logger.info(f"Fetching flight tracks for flight ID: {flight_id}")
@@ -386,11 +478,177 @@ class FR24API:
             f.write(kml_content)
         self.logger.info(f"KML file saved to {kml_file}")
 
-        # Create an enhanced plot.
-        plot_file = os.path.join(output_dir, "plot.png")
-        self.enhanced_plot_flight(sorted_tracks, flight_id, fig_filename=plot_file)
+        # Create map visualization
+        map_file = os.path.join(output_dir, "map.png")
+        self.enhanced_plot_flight(sorted_tracks, flight_id, fig_filename=map_file, background=background, orientation=orientation)
+        
+        # Create speed chart
+        speed_file = os.path.join(output_dir, "speed.png")
+        self._plot_speed_chart(sorted_tracks, flight_id, speed_file)
+        
+        # Create altitude chart
+        altitude_file = os.path.join(output_dir, "altitude.png")
+        self._plot_altitude_chart(sorted_tracks, flight_id, altitude_file)
 
         return output_dir
+
+    def _plot_speed_chart(self, tracks, flight_id, output_file):
+        """Create a line chart of speed over time."""
+        # Extract timestamps and speeds
+        timestamps = []
+        speeds = []
+        self.logger.debug(f"Processing {len(tracks)} track points for speed chart")
+        
+        for i, track in enumerate(tracks):
+            try:
+                self.logger.debug(f"Track point {i}: {track}")
+                
+                # Skip if timestamp is missing or None
+                if 'timestamp' not in track or track['timestamp'] is None:
+                    self.logger.debug(f"Skipping track {i}: missing or None timestamp")
+                    continue
+                    
+                timestamp = pd.to_datetime(track['timestamp'])
+                
+                # Handle missing or None speed values
+                if 'gspeed' not in track or track['gspeed'] is None:
+                    speed = 0  # Assume zero speed when data is missing
+                    self.logger.debug(f"Track {i}: using zero speed for missing data")
+                else:
+                    speed = float(track['gspeed'])
+                
+                # Skip only if speed is negative or unreasonably high
+                if speed < 0 or speed > 1000:  # 1000 knots is a reasonable upper limit
+                    self.logger.debug(f"Skipping track {i}: invalid speed value {speed}")
+                    continue
+                    
+                timestamps.append(timestamp)
+                speeds.append(speed)
+                self.logger.debug(f"Added track point {i}: timestamp={timestamp}, speed={speed}")
+            except (ValueError, TypeError) as e:
+                self.logger.debug(f"Skipping track {i}: error processing data - {e}")
+                continue
+
+        if not timestamps:
+            self.logger.warning("No valid speed data available for plotting")
+            return
+
+        self.logger.debug(f"Creating speed chart with {len(timestamps)} points")
+        
+        # Set style
+        plt.style.use('fivethirtyeight')
+        
+        # Create the plot with larger figure size
+        plt.figure(figsize=(16, 9))
+        
+        # Plot the speed data
+        plt.plot(timestamps, speeds, color='#f18851', linewidth=2.5, label='Ground speed')
+        
+        # Add title and labels with larger font sizes
+        plt.title(f"Flight {flight_id} - Ground speed profile", fontsize=16, pad=20)
+        plt.xlabel("Time", fontsize=14)
+        plt.ylabel("Ground speed (knots)", fontsize=14)
+        
+        # Customize grid
+        plt.grid(True, linestyle='--', alpha=0.5)
+        
+        # Format x-axis ticks
+        plt.xticks(rotation=45)
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        
+        # Add reference lines for common speed thresholds
+        plt.axhline(y=0, color='gray', linestyle=':', alpha=0.5, label='Ground')
+        
+        # Add legend
+        plt.legend(loc='upper right', fontsize=12)
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        # Save the plot with higher DPI
+        plt.savefig(output_file, dpi=300, bbox_inches="tight")
+        plt.close()
+        self.logger.info(f"Speed chart saved to {output_file}")
+
+    def _plot_altitude_chart(self, tracks, flight_id, output_file):
+        """Create a line chart of altitude over time."""
+        # Extract timestamps and altitudes
+        timestamps = []
+        altitudes = []
+        self.logger.debug(f"Processing {len(tracks)} track points for altitude chart")
+        
+        for i, track in enumerate(tracks):
+            try:
+                self.logger.debug(f"Track point {i}: {track}")
+                
+                # Skip if timestamp is missing or None
+                if 'timestamp' not in track or track['timestamp'] is None:
+                    self.logger.debug(f"Skipping track {i}: missing or None timestamp")
+                    continue
+                    
+                timestamp = pd.to_datetime(track['timestamp'])
+                
+                # Handle missing or None altitude values
+                if 'alt' not in track or track['alt'] is None:
+                    alt = 0  # Assume ground level when data is missing
+                    self.logger.debug(f"Track {i}: using zero altitude for missing data")
+                else:
+                    alt = float(track['alt'])
+                
+                # Skip only if altitude is negative or unreasonably high
+                if alt < 0 or alt > 50000:  # 50,000 feet is a reasonable upper limit
+                    self.logger.debug(f"Skipping track {i}: invalid altitude value {alt}")
+                    continue
+                    
+                timestamps.append(timestamp)
+                altitudes.append(alt)
+                self.logger.debug(f"Added track point {i}: timestamp={timestamp}, altitude={alt}")
+            except (ValueError, TypeError) as e:
+                self.logger.debug(f"Skipping track {i}: error processing data - {e}")
+                continue
+
+        if not timestamps:
+            self.logger.warning("No valid altitude data available for plotting")
+            return
+
+        self.logger.debug(f"Creating altitude chart with {len(timestamps)} points")
+        
+        # Set style
+        plt.style.use('fivethirtyeight')
+        
+        # Create the plot with larger figure size
+        plt.figure(figsize=(16, 9))
+        
+        # Plot the altitude data
+        plt.plot(timestamps, altitudes, color='#f18851', linewidth=2.5, label='Altitude')
+        
+        # Add title and labels with larger font sizes
+        plt.title(f"Flight {flight_id} - Altitude profile", fontsize=16, pad=20)
+        plt.xlabel("Time", fontsize=14)
+        plt.ylabel("Altitude (feet)", fontsize=14)
+        
+        # Customize grid
+        plt.grid(True, linestyle='--', alpha=0.5)
+        
+        # Format x-axis ticks
+        plt.xticks(rotation=45)
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+        
+        # Add reference lines for common altitude thresholds
+        plt.axhline(y=30000, color='gray', linestyle=':', alpha=0.5, label='30,000 ft')
+        plt.axhline(y=10000, color='gray', linestyle=':', alpha=0.5, label='10,000 ft')
+        plt.axhline(y=0, color='gray', linestyle=':', alpha=0.5, label='Ground')
+        
+        # Add legend
+        plt.legend(loc='upper right', fontsize=12)
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        # Save the plot with higher DPI
+        plt.savefig(output_file, dpi=300, bbox_inches="tight")
+        plt.close()
+        self.logger.info(f"Altitude chart saved to {output_file}")
 
     def get_flight_ids_by_registration(self, registration, date_from, date_to, offset=0, limit=20, max_pages=5):
         """Get all flight IDs for a specific aircraft registration within a date range.

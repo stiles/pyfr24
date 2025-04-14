@@ -86,15 +86,28 @@ print(json.dumps(airline_info, indent=2))
 tracks = api.get_flight_tracks("39bebe6e")
 print(json.dumps(tracks, indent=2))
 
-# Example d: Export flight data.
+# Example D: Export flight data.
 # This creates a directory named after the flight ID containing:
 #   - data.csv: CSV of flight track points
 #   - points.geojson: GeoJSON of track points
 #   - line.geojson: GeoJSON LineString connecting the points
 #   - track.kml: Flight path in KML format
-#   - plot.png: A quick map plot of the flight path
+#   - map.png: Map visualization of the flight path (16:9 by default)
+#   - speed.png: Line chart of speed over time
+#   - altitude.png: Line chart of altitude over time
 output_dir = api.export_flight_data("39bebe6e")
 print(f"Flight data exported to directory: {output_dir}")
+
+# Export with different background maps
+output_dir = api.export_flight_data("39bebe6e", background='osm')  # OpenStreetMap
+output_dir = api.export_flight_data("39bebe6e", background='stamen')  # Stamen Terrain
+output_dir = api.export_flight_data("39bebe6e", background='esri')  # ESRI World TopoMap
+# Default is CartoDB Positron (light gray)
+
+# Export with different map orientations
+output_dir = api.export_flight_data("39bebe6e", orientation='horizontal')  # 16:9 aspect ratio (default)
+output_dir = api.export_flight_data("39bebe6e", orientation='vertical')    # 9:16 aspect ratio
+output_dir = api.export_flight_data("39bebe6e", orientation='auto')       # Choose based on flight path
 
 # Get airline information
 airline = api.get_airline_info("BAW")
@@ -128,6 +141,17 @@ pyfr24 flight-tracks --flight-id 39a84c3c
 pyfr24 export-flight -i 39a84c3c -o data/flight_39a84c3c
 # or
 pyfr24 export-flight --flight-id 39a84c3c --output-dir data/flight_39a84c3c
+
+# Export with different background maps
+pyfr24 export-flight -i 39a84c3c --background osm  # OpenStreetMap
+pyfr24 export-flight -i 39a84c3c --background stamen  # Stamen Terrain
+pyfr24 export-flight -i 39a84c3c --background esri  # ESRI World TopoMap
+# Default is CartoDB Positron (light gray)
+
+# Export with different map orientations
+pyfr24 export-flight -i 39a84c3c --orientation horizontal  # 16:9 aspect ratio (default)
+pyfr24 export-flight -i 39a84c3c --orientation vertical    # 9:16 aspect ratio
+pyfr24 export-flight -i 39a84c3c --orientation auto       # Choose based on flight path
 
 # Get airline information
 pyfr24 airline-info -i AAL
