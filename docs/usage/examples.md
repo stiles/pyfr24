@@ -1,8 +1,83 @@
 # Examples
 
-## Case Study: Incident Investigation
+This page provides usage examples to help you get the most out of Pyfr24.
 
-This example shows how to investigate a potential incident involving multiple flights near an airport.
+## Basic data retrieval
+
+### Getting flight tracks
+
+```python
+from pyfr24 import FR24API
+
+api = FR24API("your_api_token")
+
+# Get flight tracks by ID
+tracks = api.get_flight_tracks("39bebe6e")
+print(f"Found {len(tracks)} track points")
+
+# Print the first track point
+if tracks:
+    print(tracks[0])
+```
+
+### Finding live flights
+
+```python
+from pyfr24 import FR24API
+
+api = FR24API("your_api_token")
+
+# Find live flights for an aircraft registration
+flights = api.get_live_flights_by_registration("N12345")
+for flight in flights.get("data", []):
+    print(f"Flight {flight.get('callsign')} at position: {flight.get('lat')}, {flight.get('lon')}")
+```
+
+## Data export examples
+
+### Export with custom settings
+
+```python
+from pyfr24 import FR24API
+
+api = FR24API("your_api_token")
+
+# Export with custom background and orientation
+output_dir = api.export_flight_data(
+    "39bebe6e",
+    background='osm',        # OpenStreetMap
+    orientation='vertical',  # 9:16 aspect ratio
+    output_dir="custom_export"
+)
+
+print(f"Data exported to {output_dir}")
+```
+
+### Batch export multiple flights
+
+```python
+import os
+from pyfr24 import FR24API
+
+api = FR24API("your_api_token")
+
+# List of flight IDs to export
+flight_ids = ["39bebe6e", "39a84c3c", "39b845d8"]
+
+for flight_id in flight_ids:
+    try:
+        output_dir = api.export_flight_data(
+            flight_id,
+            output_dir=f"batch_export/{flight_id}"
+        )
+        print(f"Exported {flight_id} to {output_dir}")
+    except Exception as e:
+        print(f"Error exporting {flight_id}: {e}")
+```
+
+## Case study: incident investigation
+
+This example shows how to investigate flight incidents by retrieving and comparing flight data.
 
 ```python
 import os
@@ -10,11 +85,16 @@ import json
 import logging
 from pyfr24 import FR24API, configure_logging
 
+# Configure logging
+configure_logging(level=logging.INFO, log_file="investigation.log")
+
 def investigate_incident(api, flight_ids, date_from, date_to):
     """
-    For each flight (by reported flight number or call sign),
-    retrieve the flight summary, extract the internal "fr24_id" and
-    then export flight track data using that ID.
+    For each flight number or call sign, retrieve the flight summary, 
+    extract the internal fr24_id and export flight track data.
+    
+    Returns a dictionary mapping each original flight ID to results
+    containing the internal fr24_id, summary details and export directory.
     """
     results = {}
     for fid in flight_ids:
@@ -44,129 +124,76 @@ def investigate_incident(api, flight_ids, date_from, date_to):
                 print(f"No fr24_id found in summary entry: {entry}")
                 continue
             try:
-                # Export flight data with both reported flight ID and internal ID
-                export_dir = api.export_flight_data(
-                    internal_id, 
-                    output_dir=f"data/{fid}_{internal_id}"
-                )
-                print(f"Flight tracks exported to: {export_dir}")
+                # Create an output directory named using both identifiers
+                export_dir = api.export_flight_data(internal_id, output_dir=f"data/{fid}_{internal_id}")
+                print(f"Flight tracks for {fid} (internal id: {internal_id}) exported to: {export_dir}")
                 results[fid].append({
                     "fr24_id": internal_id,
                     "summary": entry,
                     "export_dir": export_dir
                 })
             except Exception as e:
-                print(f"Error exporting tracks for {fid}: {e}")
+                print(f"Error exporting flight tracks for {fid} (internal id: {internal_id}): {e}")
     return results
 
 if __name__ == "__main__":
-    # Configure logging
-    configure_logging(level=logging.INFO, log_file="investigation.log")
-    
     token = os.environ.get("FLIGHTRADAR_API_KEY")
     if not token:
         raise ValueError("FLIGHTRADAR_API_KEY environment variable not set.")
     
     api = FR24API(token)
     
-    # Flight numbers/callsigns to investigate
+    # Flight numbers/callsigns from the scenario
     flight_ids = ["DL2983", "DO61", "AA5308"]
-    # Time window for the incident
+    # Define a time window covering the incident
     date_from = "2025-03-28T12:15:01Z"
     date_to   = "2025-03-28T23:18:01Z"
     
     results = investigate_incident(api, flight_ids, date_from, date_to)
-    
-    # Save investigation results
+    print("\nInvestigation results:")
+    print(json.dumps(results, indent=2))
+
+    # Save the investigation results to a JSON file
     with open("investigation_results.json", "w") as f:
         json.dump(results, f, indent=2)
 ```
 
-## Basic Data Collection
+## Basic data collection
 
-This example shows how to collect basic flight data:
+This example shows how to retrieve and save flight information using the CLI.
 
-```python
-import os
-import json
-from pyfr24 import FR24API, configure_logging
+```bash
+#!/bin/bash
 
-# Configure logging
-configure_logging(level=logging.INFO, log_file="example.log")
+# Set your token as an environment variable
+export FLIGHTRADAR_API_KEY="your_api_token"
 
-token = os.environ.get("FLIGHTRADAR_API_KEY")
-api = FR24API(token)
+# Create output directory
+mkdir -p data
 
-# Get live flights for an aircraft
-live_flights = api.get_live_flights_by_registration("N458WN")
-print("Live Flights:", json.dumps(live_flights, indent=2))
+# Get flight summary for a specific flight
+pyfr24 flight-summary --flight BA123 --from-date "2023-01-01" --to-date "2023-01-01" --output data/ba123_summary.json
 
-# Get flight summary
-summary = api.get_flight_summary_full(
-    flights="DO61",
-    flight_datetime_from="2025-03-28T00:00:00",
-    flight_datetime_to="2025-03-28T23:59:59",
-)
-print("Flight summary:", json.dumps(summary, indent=2))
-
-# Get and export flight tracks
-flight_id = "39a8364d"
-tracks = api.get_flight_tracks(flight_id)
-print("Flight tracks:", json.dumps(tracks, indent=2))
-
-# Export flight data with visualizations
-output_directory = api.export_flight_data(
-    flight_id,
-    background='osm',  # Use OpenStreetMap background
-    orientation='auto'  # Auto-detect best orientation
-)
-print(f"Flight data exported to: {output_directory}")
-```
-
-## Error Handling Example
-
-This example demonstrates proper error handling:
-
-```python
-from pyfr24 import (
-    FR24API, FR24Error, FR24AuthenticationError, 
-    FR24NotFoundError, FR24RateLimitError
-)
-
-def safe_get_flight_data(api, flight_id):
-    try:
-        # Try to get flight tracks
-        tracks = api.get_flight_tracks(flight_id)
+# Check if the command was successful
+if [ $? -eq 0 ]; then
+    echo "Flight summary saved to data/ba123_summary.json"
+    
+    # Extract flight ID from the summary using jq (if available)
+    if command -v jq &> /dev/null; then
+        flight_id=$(jq -r '.data[0].fr24_id // empty' data/ba123_summary.json)
         
-        # Export the data if tracks were found
-        output_dir = api.export_flight_data(
-            flight_id,
-            background='carto',
-            orientation='auto'
-        )
-        return {"success": True, "data": tracks, "output_dir": output_dir}
-        
-    except FR24AuthenticationError:
-        return {"success": False, "error": "Invalid API token"}
-        
-    except FR24NotFoundError:
-        return {"success": False, "error": f"No data found for flight {flight_id}"}
-        
-    except FR24RateLimitError:
-        return {"success": False, "error": "Rate limit exceeded"}
-        
-    except FR24Error as e:
-        return {"success": False, "error": str(e)}
-        
-    except Exception as e:
-        return {"success": False, "error": f"Unexpected error: {str(e)}"}
-
-# Usage
-api = FR24API(os.environ.get("FLIGHTRADAR_API_KEY"))
-result = safe_get_flight_data(api, "39a8364d")
-
-if result["success"]:
-    print(f"Data exported to: {result['output_dir']}")
-else:
-    print(f"Error: {result['error']}")
-``` 
+        if [ ! -z "$flight_id" ]; then
+            echo "Found flight ID: $flight_id"
+            
+            # Export flight data using the extracted ID
+            pyfr24 export-flight --flight-id "$flight_id" --output-dir "data/flight_$flight_id"
+            echo "Flight data exported to data/flight_$flight_id"
+        else
+            echo "No flight ID found in summary"
+        fi
+    else
+        echo "jq not found, skipping automatic ID extraction"
+    fi
+else
+    echo "Error: $result['error']"
+fi 

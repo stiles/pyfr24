@@ -1,6 +1,6 @@
-# Python API Reference
+# Python API reference
 
-## Basic Usage
+## Basic usage
 
 ```python
 import os
@@ -14,16 +14,16 @@ token = os.environ.get("FLIGHTRADAR_API_KEY")
 api = FR24API(token)
 ```
 
-## Flight Data Methods
+## Flight data methods
 
-### Get Live Flights
+### Get live flights
 
 ```python
 # Get live flights for a specific aircraft registration
 live_flights = api.get_live_flights_by_registration("HL7637")
 ```
 
-### Get Flight Summary
+### Get flight summary
 
 ```python
 # Get basic flight summary
@@ -41,16 +41,16 @@ summary_full = api.get_flight_summary_full(
 )
 ```
 
-### Get Flight Tracks
+### Get flight tracks
 
 ```python
 # Get flight tracks using the flight ID
 tracks = api.get_flight_tracks("39bebe6e")
 ```
 
-## Data Export
+## Data export
 
-### Export Flight Data
+### Export flight data
 
 ```python
 # Basic export
@@ -77,32 +77,32 @@ The export creates a directory containing:
 - `speed.png`: Line chart of speed over time
 - `altitude.png`: Line chart of altitude over time
 
-## Airline and Airport Information
+## Airline and airport information
 
-### Get Airline Information
+### Get airline information
 
 ```python
 # Get basic airline info
 airline_light = api.get_airline_light("AAL")
 ```
 
-### Get Airport Information
+### Get airport information
 
 ```python
 # Get detailed airport info
 airport_full = api.get_airport_full("LHR")
 ```
 
-## Flight Positions and IDs
+## Flight positions and IDs
 
-### Get Flight Positions
+### Get flight positions
 
 ```python
 # Get flight positions within bounds
 positions = api.get_flight_positions_light("33.5,-118.8,34.5,-117.5")
 ```
 
-### Get Flight IDs
+### Get flight IDs
 
 ```python
 # Get flight IDs for an aircraft registration
@@ -113,7 +113,7 @@ flight_ids = api.get_flight_ids_by_registration(
 )
 ```
 
-## Error Handling
+## Error handling
 
 ```python
 from pyfr24 import FR24API, FR24AuthenticationError, FR24NotFoundError
@@ -133,7 +133,7 @@ except Exception as e:
     print(f"Unexpected error: {e}")
 ```
 
-## Logging Configuration
+## Logging configuration
 
 ```python
 import logging

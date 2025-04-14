@@ -1,27 +1,27 @@
-# Pyfr24 Documentation
+# Pyfr24 documentation
 
-Welcome to the Pyfr24 documentation! This Python package provides a simple interface to the Flightradar24 API, allowing you to fetch, plot, and analyze flight data.
+Welcome to the Pyfr24 documentation This Python package provides a simple interface to the Flightradar24 API, allowing you to fetch, plot and analyze flight data.
 
 ## Features
 
-- **Flight Data Retrieval**: Access live flights, historical tracks, and detailed flight information
-- **Data Export**: Export flight data in multiple formats (CSV, GeoJSON, KML)
-- **Map Visualization**: Generate flight path visualizations with customizable:
+- **Flight data retrieval**: Access live flights, historical tracks and detailed flight information
+- **Data export**: Export flight data in multiple formats (CSV, GeoJSON and KML)
+- **Map visualization**: Generate flight path visualizations with customizable:
     - Background maps (CartoDB, OpenStreetMap, Stamen, ESRI)
-    - Orientation (16:9 horizontal, 9:16 vertical, or auto-detect)
+    - Orientation (16:9 horizontal, 9:16 vertical or auto-detect)
     - High-quality output (300 DPI)
-- **Flight Analysis**: Create speed and altitude profile charts
-- **Command-line Interface**: Quick access to all features without writing code
-- **Error Handling**: Robust error handling and logging
-- **API Token Management**: Flexible API token configuration
+- **Flight analysis**: Create speed and altitude profile charts
+- **Command-line interface**: Quick access to all features without writing code
+- **Error handling**: Robust error handling and logging
+- **API token management**: Flexible API token configuration
 
-## Quick Links
+## Quick links
 
-- [Installation Guide](installation.md)
-- [Quick Start Guide](usage/quickstart.md)
-- [CLI Reference](usage/cli.md)
-- [Python API Reference](usage/api.md)
-- [Example Usage](usage/examples.md)
+- [Installation guide](installation.md)
+- [Quick start guide](usage/quickstart.md)
+- [CLI reference](usage/cli.md)
+- [Python API reference](usage/api.md)
+- [Example usage](usage/examples.md)
 
 ## Requirements
 
@@ -49,7 +49,7 @@ cd pyfr24
 pip install -e .
 ```
 
-## Basic Usage
+## Basic usage
 
 ```python
 from pyfr24 import FR24API
@@ -89,4 +89,4 @@ pyfr24 live-flights --registration N12345
 pyfr24 flight-tracks --flight-id 39a84c3c
 ```
 
-For more detailed information, check out the [Quick Start Guide](usage/quickstart.md). 
+For more detailed information, check out the [quick start guide](usage/quickstart.md). 

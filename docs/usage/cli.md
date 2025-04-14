@@ -1,8 +1,8 @@
-# CLI Reference
+# CLI reference
 
 The Pyfr24 command-line interface provides quick access to all features without writing code.
 
-## Common Options
+## Common options
 
 These options are available for all commands:
 
@@ -11,9 +11,9 @@ These options are available for all commands:
 - `-f, --log-file`: Log file path
 - `-o, --output`: Output file path (JSON)
 
-## Available Commands
+## Available commands
 
-### Flight Summary
+### Flight summary
 
 Get flight summary information:
 ```bash
@@ -24,7 +24,7 @@ pyfr24 flight-summary -F AA123 -f "2023-01-01" -t "2023-01-01"
 pyfr24 flight-summary --flight AA123 --from-date "2023-01-01" --to-date "2023-01-01"
 ```
 
-### Live Flights
+### Live flights
 
 Get live flights for an aircraft registration:
 ```bash
@@ -35,7 +35,7 @@ pyfr24 live-flights -R N12345
 pyfr24 live-flights --registration N12345
 ```
 
-### Flight Tracks
+### Flight tracks
 
 Get flight tracks by ID:
 ```bash
@@ -46,7 +46,7 @@ pyfr24 flight-tracks -i 39a84c3c
 pyfr24 flight-tracks --flight-id 39a84c3c
 ```
 
-### Export Flight Data
+### Export flight data
 
 Export flight data with various options:
 ```bash
@@ -64,7 +64,7 @@ pyfr24 export-flight -i 39a84c3c --orientation vertical    # 9:16 aspect ratio
 pyfr24 export-flight -i 39a84c3c --orientation auto       # Auto-detect
 ```
 
-### Airline Information
+### Airline information
 
 Get airline information by ICAO code:
 ```bash
@@ -75,7 +75,7 @@ pyfr24 airline-info -i AAL
 pyfr24 airline-info --icao AAL
 ```
 
-### Airport Information
+### Airport information
 
 Get airport information by code:
 ```bash
@@ -86,7 +86,7 @@ pyfr24 airport-info -c JFK
 pyfr24 airport-info --code JFK
 ```
 
-### Flight Positions
+### Flight positions
 
 Get flight positions within a bounding box:
 ```bash
@@ -108,7 +108,7 @@ pyfr24 flight-ids -R N216MH -f "2025-01-01" -t "2025-04-10"
 pyfr24 flight-ids -R N216MH -f "2025-01-01" -t "2025-04-10" -o flight_ids.json
 ```
 
-## Getting Help
+## Getting help
 
 For detailed help on any command:
 ```bash

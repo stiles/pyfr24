@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to Pyfr24! This document provides guidelines and instructions for contributing to the project.
 
-## Development Setup
+## Development setup
 
 1. Fork and clone the repository:
 ```bash
@@ -17,7 +17,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
-## Running Tests
+## Running tests
 
 The package includes a comprehensive test suite. To run the tests:
 
@@ -25,14 +25,14 @@ The package includes a comprehensive test suite. To run the tests:
 python run_tests.py
 ```
 
-## Code Style
+## Code style
 
 We follow PEP 8 guidelines with some modifications:
 - Line length limit: 100 characters
 - Use double quotes for strings
 - Use trailing commas in multi-line structures
 
-## Pull Request Process
+## Pull request process
 
 1. Create a new branch for your feature:
 ```bash
@@ -64,14 +64,14 @@ When adding new features, please include:
 - Example usage in docstrings
 - Updates to the README if needed
 
-## Testing Guidelines
+## Testing guidelines
 
 - Write tests for new features
 - Maintain or improve test coverage
 - Include both unit and integration tests
 - Mock external API calls in tests
 
-## Reporting Issues
+## Reporting issues
 
 When reporting issues, please include:
 - Python version
@@ -81,7 +81,7 @@ When reporting issues, please include:
 - Expected vs actual behavior
 - Any relevant error messages
 
-## Feature Requests
+## Feature requests
 
 For feature requests, please:
 - Check existing issues first
@@ -89,10 +89,10 @@ For feature requests, please:
 - Explain the use case
 - Provide example usage if possible
 
-## Code of Conduct
+## Code of conduct
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License. 
+By contributing, you agree that your contributions will be licensed under the MIT License.
