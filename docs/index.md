@@ -1,6 +1,6 @@
 # Pyfr24 documentation
 
-Welcome to the Pyfr24 documentation This Python package provides a simple interface to the Flightradar24 API, allowing you to fetch, plot and analyze flight data.
+Welcome to the Pyfr24 documentation. This Python package provides a simple interface to the Flightradar24 API, allowing you to fetch, plot and analyze flight data.
 
 ## Features
 
