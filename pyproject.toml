@@ -1,3 +1,45 @@
+[tool.poetry]
+name = "pyfr24"
+version = "0.1.4"
+description = "A Python client for the Flightradar24 API with CLI support"
+authors = ["Matt Stiles <mattstiles@gmail.com>"]
+readme = "README.md"
+packages = [{include = "pyfr24"}]
+license = "MIT"
+repository = "https://github.com/stiles/pyfr24"
+keywords = ["flightradar24", "flight", "tracking", "aviation", "api", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "*"
+matplotlib = "*"
+geopandas = "*"
+contextily = "*"
+shapely = "*"
+pandas = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0"
+
+[tool.poetry.scripts]
+pyfr24 = "pyfr24.cli:main"
+
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta" 
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/stiles/pyfr24/issues" 
