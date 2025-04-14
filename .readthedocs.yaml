@@ -18,8 +18,6 @@ build:
 # Build documentation with MkDocs
 mkdocs:
   configuration: mkdocs.yml
-  fail_on_warning: false
-  strict: false
 
 # Python requirements for building docs
 python:
@@ -28,6 +26,6 @@ python:
 
 # Output formats
 formats:
+  - htmlzip
   - pdf
-  - epub
-  - htmlzip 
+  - epub 
