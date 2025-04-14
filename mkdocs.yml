@@ -34,6 +34,8 @@ theme:
 
 plugins:
   - search
+  - autorefs:
+      link_titles: "smart"
   - mkdocstrings:
       default_handler: python
       handlers:
