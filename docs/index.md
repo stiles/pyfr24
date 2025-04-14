@@ -44,7 +44,7 @@ pip install pyfr24
 Or install directly from the repository:
 
 ```bash
-git clone https://github.com/mstiles/pyfr24.git
+git clone https://github.com/stiles/pyfr24.git
 cd pyfr24
 pip install -e .
 ```

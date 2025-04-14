@@ -1,8 +1,8 @@
 site_name: Pyfr24
 site_description: Python client for the Flightradar24 API with CLI support
 site_author: Matt Stiles
-repo_url: https://github.com/mstiles/pyfr24
-repo_name: mstiles/pyfr24
+repo_url: https://github.com/stiles/pyfr24
+repo_name: stiles/pyfr24
 
 # Ensure proper URL handling
 use_directory_urls: true

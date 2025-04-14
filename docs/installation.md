@@ -13,7 +13,7 @@ pip install pyfr24
 Or install in editable mode from the repository:
 
 ```bash
-git clone https://github.com/mstiles/pyfr24.git
+git clone https://github.com/stiles/pyfr24.git
 cd pyfr24
 pip install -e .
 ```
@@ -23,7 +23,7 @@ pip install -e .
 If you prefer using poetry:
 
 ```bash
-git clone https://github.com/mstiles/pyfr24.git
+git clone https://github.com/stiles/pyfr24.git
 cd pyfr24
 poetry install
 ```

@@ -11,7 +11,7 @@ setup(
     long_description_content_type="text/markdown",
     author='Matt Stiles',
     author_email='mattstiles@gmail.com',
-    url='https://github.com/mstiles/pyfr24',
+    url='https://github.com/stiles/pyfr24',
     packages=find_packages(),
     install_requires=[
         'requests',

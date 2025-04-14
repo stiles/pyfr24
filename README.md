@@ -371,8 +371,8 @@ This project is under development. Some features to tackle next:
 - **Caching and rate limit handling**  
   Add caching support to reduce redundant API calls and build in rate limit awareness to prevent overuse
 
-- **Better docs**  
-  Improve docs with more examples and an API reference
+- **Better docs** ✅  
+  Documentation is now available at [https://pyfr24.readthedocs.io/](https://pyfr24.readthedocs.io/)
 
 ## Contributing
 
