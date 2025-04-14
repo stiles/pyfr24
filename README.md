@@ -11,6 +11,14 @@ Pyfr24 is a Python client for the [Flightradar24 API](https://fr24api.flightrada
 - Export flight data to CSV, GeoJSON, KML and plot
 - Error handling and logging
 - Command-line interface
+- Customizable map visualization:
+  - Multiple background options (CartoDB, OpenStreetMap, Stamen, ESRI)
+  - Flexible orientation options:
+    - Horizontal (16:9) - Default, ideal for east-west flights
+    - Vertical (9:16) - Better for north-south flights
+    - Auto - Automatically selects based on flight path direction
+  - High-quality output (300 DPI)
+  - Clean, modern styling with orange flight path
 
 ## Installation
 
@@ -109,6 +117,13 @@ output_dir = api.export_flight_data("39bebe6e", orientation='horizontal')  # 16:
 output_dir = api.export_flight_data("39bebe6e", orientation='vertical')    # 9:16 aspect ratio
 output_dir = api.export_flight_data("39bebe6e", orientation='auto')       # Choose based on flight path
 
+# Combine background and orientation options
+output_dir = api.export_flight_data(
+    "39bebe6e",
+    background='osm',       # Use OpenStreetMap background
+    orientation='vertical'  # 9:16 aspect ratio for north-south flights
+)
+
 # Get airline information
 airline = api.get_airline_info("BAW")
 
@@ -152,6 +167,12 @@ pyfr24 export-flight -i 39a84c3c --background esri  # ESRI World TopoMap
 pyfr24 export-flight -i 39a84c3c --orientation horizontal  # 16:9 aspect ratio (default)
 pyfr24 export-flight -i 39a84c3c --orientation vertical    # 9:16 aspect ratio
 pyfr24 export-flight -i 39a84c3c --orientation auto       # Choose based on flight path
+
+# Combine background and orientation options
+pyfr24 export-flight -i 39a84c3c \
+    --background osm \
+    --orientation vertical \
+    --output-dir data/flight_39a84c3c
 
 # Get airline information
 pyfr24 airline-info -i AAL
