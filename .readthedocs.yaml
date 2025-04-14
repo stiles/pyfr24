@@ -10,6 +10,10 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
+  jobs:
+    pre_build:
+      - pip install --upgrade pip
+      - pip install -r docs/requirements.txt
 
 # Build documentation with MkDocs
 mkdocs:
@@ -21,8 +25,6 @@ mkdocs:
 python:
   install:
     - requirements: docs/requirements.txt
-    - method: pip
-    - path: .
 
 # Output formats
 formats:
