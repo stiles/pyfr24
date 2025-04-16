@@ -193,13 +193,9 @@ To run this investigation:
 
 ## Basic data collection
 
-This example demonstrates how to use the CLI to retrieve and save flight information. It shows how to:
-- Get flight summaries using the CLI
-- Extract flight IDs from summary data
-- Export flight data using extracted IDs
-- Handle errors and dependencies
+This example shows how to retrieve and save flight information using the CLI.
 
-### Implementation
+### Using the CLI directly
 
 ```bash
 #!/bin/bash
@@ -211,51 +207,46 @@ export FLIGHTRADAR_API_KEY="your_api_token"
 mkdir -p data
 
 # Get flight summary for a specific flight
-pyfr24 flight-summary \
-    --flight BA123 \
-    --from-date "2023-01-01" \
-    --to-date "2023-01-01" \
-    --output data/ba123_summary.json
+pyfr24 flight-summary --flight BA123 --from-date "2023-01-01" --to-date "2023-01-01" --output data/ba123_summary.json
 
 # Check if the command was successful
 if [ $? -eq 0 ]; then
     echo "Flight summary saved to data/ba123_summary.json"
     
-    # Extract flight ID from the summary using jq (if available)
+    # Option 1: Use Python to extract the flight ID
+    flight_id=$(python3 -c "import json; f=open('data/ba123_summary.json'); data=json.load(f); print(data.get('data', [{}])[0].get('fr24_id', ''))")
+    
+    # Option 2: Use jq if available (optional)
     if command -v jq &> /dev/null; then
         flight_id=$(jq -r '.data[0].fr24_id // empty' data/ba123_summary.json)
+    fi
+    
+    if [ ! -z "$flight_id" ]; then
+        echo "Found flight ID: $flight_id"
         
-        if [ ! -z "$flight_id" ]; then
-            echo "Found flight ID: $flight_id"
-            
-            # Export flight data using the extracted ID
-            pyfr24 export-flight \
-                --flight-id "$flight_id" \
-                --output-dir "data/flight_$flight_id"
-            echo "Flight data exported to data/flight_$flight_id"
-        else
-            echo "No flight ID found in summary"
-        fi
+        # Export flight data using the extracted ID
+        pyfr24 export-flight --flight-id "$flight_id" --output-dir "data/flight_$flight_id"
+        echo "Flight data exported to data/flight_$flight_id"
     else
-        echo "jq not found, skipping automatic ID extraction"
+        echo "No flight ID found in summary"
     fi
 else
     echo "Error: Failed to retrieve flight summary"
 fi
 ```
 
-### Usage Notes
+### Usage notes
 
-1. **Prerequisites**:
-   - Install `jq` for JSON processing (optional)
-   - Set your Flightradar24 API key
-   - Create the output directory
+- **JSON processing**:
+  - The package uses Python's built-in `json` module
+  - `jq` is optional and only used in the bash example
+  - You can use any JSON processing tool of your choice
 
-2. **Output Files**:
-   - Flight summary: `data/ba123_summary.json`
-   - Flight data: `data/flight_<flight_id>/`
+- **Output files**:
+  - Flight summary: `data/ba123_summary.json`
+  - Flight data: `data/flight_<flight_id>/`
 
-3. **Error Handling**:
-   - The script checks for command success
-   - Handles missing `jq` dependency gracefully
-   - Validates flight ID extraction
+- **Error handling**:
+  - The script checks for command success
+  - Handles missing dependencies gracefully
+  - Validates flight ID extraction
