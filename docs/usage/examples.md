@@ -75,9 +75,15 @@ for flight_id in flight_ids:
         print(f"Error exporting {flight_id}: {e}")
 ```
 
-## Case study: incident investigation
+## Case Study: Incident Investigation
 
-This example shows how to investigate flight incidents by retrieving and comparing flight data.
+This example demonstrates how to investigate flight incidents by retrieving and comparing flight data. It shows how to:
+- Retrieve flight summaries for multiple flights
+- Extract internal FR24 IDs
+- Export detailed flight track data
+- Save investigation results
+
+### Implementation
 
 ```python
 import os
@@ -90,11 +96,19 @@ configure_logging(level=logging.INFO, log_file="investigation.log")
 
 def investigate_incident(api, flight_ids, date_from, date_to):
     """
-    For each flight number or call sign, retrieve the flight summary, 
-    extract the internal fr24_id and export flight track data.
+    Investigate multiple flights within a specified time window.
     
-    Returns a dictionary mapping each original flight ID to results
-    containing the internal fr24_id, summary details and export directory.
+    Args:
+        api: FR24API instance
+        flight_ids: List of flight numbers or callsigns
+        date_from: Start date in ISO format
+        date_to: End date in ISO format
+        
+    Returns:
+        Dictionary mapping flight IDs to investigation results containing:
+        - Internal FR24 ID
+        - Summary details
+        - Export directory path
     """
     results = {}
     for fid in flight_ids:
@@ -158,9 +172,34 @@ if __name__ == "__main__":
         json.dump(results, f, indent=2)
 ```
 
+### Usage Example
+
+To run this investigation:
+
+1. Set your Flightradar24 API key:
+   ```bash
+   export FLIGHTRADAR_API_KEY="your_api_token"
+   ```
+
+2. Run the script:
+   ```bash
+   python incident_investigation.py
+   ```
+
+3. Check the output:
+   - Investigation results are saved to `investigation_results.json`
+   - Flight track data is exported to individual directories
+   - Logs are written to `investigation.log`
+
 ## Basic data collection
 
-This example shows how to retrieve and save flight information using the CLI.
+This example demonstrates how to use the CLI to retrieve and save flight information. It shows how to:
+- Get flight summaries using the CLI
+- Extract flight IDs from summary data
+- Export flight data using extracted IDs
+- Handle errors and dependencies
+
+### Implementation
 
 ```bash
 #!/bin/bash
@@ -172,7 +211,11 @@ export FLIGHTRADAR_API_KEY="your_api_token"
 mkdir -p data
 
 # Get flight summary for a specific flight
-pyfr24 flight-summary --flight BA123 --from-date "2023-01-01" --to-date "2023-01-01" --output data/ba123_summary.json
+pyfr24 flight-summary \
+    --flight BA123 \
+    --from-date "2023-01-01" \
+    --to-date "2023-01-01" \
+    --output data/ba123_summary.json
 
 # Check if the command was successful
 if [ $? -eq 0 ]; then
@@ -186,7 +229,9 @@ if [ $? -eq 0 ]; then
             echo "Found flight ID: $flight_id"
             
             # Export flight data using the extracted ID
-            pyfr24 export-flight --flight-id "$flight_id" --output-dir "data/flight_$flight_id"
+            pyfr24 export-flight \
+                --flight-id "$flight_id" \
+                --output-dir "data/flight_$flight_id"
             echo "Flight data exported to data/flight_$flight_id"
         else
             echo "No flight ID found in summary"
@@ -195,5 +240,22 @@ if [ $? -eq 0 ]; then
         echo "jq not found, skipping automatic ID extraction"
     fi
 else
-    echo "Error: $result['error']"
-fi 
+    echo "Error: Failed to retrieve flight summary"
+fi
+```
+
+### Usage Notes
+
+1. **Prerequisites**:
+   - Install `jq` for JSON processing (optional)
+   - Set your Flightradar24 API key
+   - Create the output directory
+
+2. **Output Files**:
+   - Flight summary: `data/ba123_summary.json`
+   - Flight data: `data/flight_<flight_id>/`
+
+3. **Error Handling**:
+   - The script checks for command success
+   - Handles missing `jq` dependency gracefully
+   - Validates flight ID extraction

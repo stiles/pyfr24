@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to Pyfr24! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to Pyfr24. This document provides guidelines for contributing to the project.
 
 ## Development setup
 
@@ -19,7 +19,7 @@ pip install -e ".[dev]"
 
 ## Running tests
 
-The package includes a comprehensive test suite. To run the tests:
+Run the test suite:
 
 ```bash
 python run_tests.py
@@ -27,7 +27,7 @@ python run_tests.py
 
 ## Code style
 
-We follow PEP 8 guidelines with some modifications:
+We follow PEP 8 guidelines with these modifications:
 - Line length limit: 100 characters
 - Use double quotes for strings
 - Use trailing commas in multi-line structures
@@ -51,48 +51,48 @@ git push origin feature-name
 ```
 
 4. Open a Pull Request with:
-   - Clear description of changes
-   - Any relevant issue numbers
+   - Description of changes
+   - Relevant issue numbers
    - Screenshots for UI changes
-   - Test coverage for new features
+   - Tests for new features
 
 ## Documentation
 
-When adding new features, please include:
+When adding new features, include:
 - Docstrings for new functions/methods
-- Updates to relevant documentation files
+- Updates to documentation files
 - Example usage in docstrings
-- Updates to the README if needed
+- README updates if needed
 
 ## Testing guidelines
 
 - Write tests for new features
-- Maintain or improve test coverage
-- Include both unit and integration tests
+- Maintain test coverage
+- Include unit and integration tests
 - Mock external API calls in tests
 
 ## Reporting issues
 
-When reporting issues, please include:
+When reporting issues, include:
 - Python version
 - Pyfr24 version
 - Operating system
-- Minimal reproducible example
+- Reproducible example
 - Expected vs actual behavior
-- Any relevant error messages
+- Error messages
 
 ## Feature requests
 
-For feature requests, please:
+For feature requests:
 - Check existing issues first
-- Describe the feature clearly
+- Describe the feature
 - Explain the use case
-- Provide example usage if possible
+- Provide example usage
 
 ## Code of conduct
 
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+This project follows a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating you agree to its terms.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree to license your contributions under the MIT License.

@@ -1,19 +1,19 @@
 # Pyfr24 documentation
 
-Welcome to the Pyfr24 documentation. This Python package provides a simple interface to the Flightradar24 API, allowing you to fetch, plot and analyze flight data.
+Welcome to the Pyfr24 documentation. This Python package provides an interface to the Flightradar24 API for fetching, plotting and analyzing flight data.
 
 ## Features
 
-- **Flight data retrieval**: Access live flights, historical tracks and detailed flight information
+- **Flight data retrieval**: Access live flights, historical tracks and flight information
 - **Data export**: Export flight data in multiple formats (CSV, GeoJSON and KML)
-- **Map visualization**: Generate flight path visualizations with customizable:
+- **Map visualization**: Generate flight path visualizations with:
     - Background maps (CartoDB, OpenStreetMap, Stamen, ESRI)
     - Orientation (16:9 horizontal, 9:16 vertical or auto-detect)
     - High-quality output (300 DPI)
 - **Flight analysis**: Create speed and altitude profile charts
-- **Command-line interface**: Quick access to all features without writing code
-- **Error handling**: Robust error handling and logging
-- **API token management**: Flexible API token configuration
+- **Command-line interface**: Access features without writing code
+- **Error handling**: Handle errors and log events
+- **API token management**: Configure API tokens
 
 ## Quick links
 
@@ -89,4 +89,4 @@ pyfr24 live-flights --registration N12345
 pyfr24 flight-tracks --flight-id 39a84c3c
 ```
 
-For more detailed information, check out the [quick start guide](usage/quickstart.md). 
+For more information, check out the [quick start guide](usage/quickstart.md). 

@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/pyfr24/badge/?version=latest)](https://pyfr24.readthedocs.io/en/latest/?badge=latest)
 
-A Python client for the [Flightradar24 API](https://fr24api.flightradar24.com/) that provides a simple interface to fetch, plot and analyze flight data. The package includes both a Python API and a command-line interface for quick access to flight data without writing code.
+A Python client for the [Flightradar24 API](https://fr24api.flightradar24.com/) that provides an interface to fetch, plot and analyze flight data. The package includes both a Python API and a command-line interface for accessing flight data.
 
 **Full documentation:** [https://pyfr24.readthedocs.io/](https://pyfr24.readthedocs.io/)
 
@@ -74,16 +74,16 @@ Your Flightradar24 API token can be provided:
 
 ## Features
 
-- Flight data retrieval (live flights, historical tracks and detailed info)
+- Flight data retrieval (live flights, historical tracks and flight info)
 - Data export in multiple formats (CSV, GeoJSON and KML)
-- Customizable map visualizations with multiple background options
+- Map visualizations with multiple background options
 - Speed and altitude profile charts
-- Robust error handling and logging
-- Comprehensive testing
+- Error handling and logging
+- Testing
 
 ## Contributing
 
-Contributions are welcome! Please:
+Contributions are welcome. Please:
 
 1. Fork the repository
 2. Create a feature branch

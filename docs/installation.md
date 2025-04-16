@@ -4,13 +4,13 @@ Pyfr24 requires Python 3.8 or later and can be installed using pip or poetry.
 
 ## Using pip
 
-You can install Pyfr24 directly from PyPI:
+Install Pyfr24 from PyPI:
 
 ```bash
 pip install pyfr24
 ```
 
-Or install in editable mode from the repository:
+Or install from the repository:
 
 ```bash
 git clone https://github.com/stiles/pyfr24.git
@@ -20,7 +20,7 @@ pip install -e .
 
 ## Using poetry
 
-If you prefer using poetry:
+Install with poetry:
 
 ```bash
 git clone https://github.com/stiles/pyfr24.git
@@ -30,7 +30,7 @@ poetry install
 
 ## Dependencies
 
-Pyfr24 requires the following Python packages:
+Pyfr24 requires these Python packages:
 
 - requests
 - matplotlib
@@ -39,4 +39,4 @@ Pyfr24 requires the following Python packages:
 - shapely
 - pandas
 
-These dependencies will be automatically installed when you install Pyfr24. 
+These packages install automatically with Pyfr24. 
