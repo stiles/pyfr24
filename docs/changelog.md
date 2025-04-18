@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2024-04-18
+
+### Added
+- Enhanced documentation with flight identifier examples
+  - Added visual guide for flight numbers, callsigns, and FR24 IDs
+  - Updated API documentation with working examples
+  - Added image support with glightbox plugin
+  - Improved CLI documentation with real-world examples
+
+### Changed
+- Improved logging configuration
+  - Removed duplicate logging messages
+  - Simplified console output format
+  - Changed default log level to WARNING
+  - Added detailed logging format for file output
+- Updated Jinja2 dependency to >=3.1.6 for security fixes
+
+### Fixed
+- Fixed font warning message in visualization code
+- Improved error handling in client initialization
+
+## [0.1.5] - 2024-04-18
+
+### Fixed
+- Improved date handling and validation in client methods
+  - Added centralized date validation and formatting
+  - Ensures consistent date formatting across all methods
+  - Better error messages for invalid date formats
+  - Fixed date parameter handling in CLI commands
+
 ## [0.1.4] - 2024-03-14
 
 ### Added
