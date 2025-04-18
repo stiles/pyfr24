@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed font warning message in visualization code
 - Improved error handling in client initialization
+- Fixed documentation build issues
+- Fixed changelog link in documentation
 
 ## [0.1.5] - 2024-04-18
 
