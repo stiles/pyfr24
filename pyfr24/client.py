@@ -19,6 +19,8 @@ from .exceptions import (
     FR24ValidationError, FR24ConnectionError
 )
 import matplotlib.dates as mdates
+import datetime
+import re
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -193,13 +195,40 @@ class FR24API:
             self.logger.error(f"Request error: {e}")
             raise FR24Error(f"Request error: {e}")
 
+    def _validate_and_format_date(self, date_str):
+        """
+        Validate and format a date string to ISO format.
+        
+        Args:
+            date_str: Date string in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ format
+            
+        Returns:
+            str: Formatted ISO date string
+            
+        Raises:
+            FR24ValidationError: If date format is invalid
+        """
+        # Check if it's already in ISO format
+        iso_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$'
+        if re.match(iso_pattern, date_str):
+            return date_str
+            
+        # Check if it's in YYYY-MM-DD format
+        date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+        if re.match(date_pattern, date_str):
+            return f"{date_str}T00:00:00Z"
+            
+        raise FR24ValidationError(
+            "Invalid date format. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ"
+        )
+
     def get_flight_summary_light(self, flights, flight_datetime_from, flight_datetime_to, **kwargs):
         # Get basic flight summary information.
         url = f"https://fr24api.flightradar24.com/api/flight-summary/light"
         params = {
             "flights": flights,
-            "flight_datetime_from": flight_datetime_from,
-            "flight_datetime_to": flight_datetime_to
+            "flight_datetime_from": self._validate_and_format_date(flight_datetime_from),
+            "flight_datetime_to": self._validate_and_format_date(flight_datetime_to)
         }
         params.update(kwargs)
         response = self._make_request("get", url, headers=self.session.headers, params=params)
@@ -210,8 +239,8 @@ class FR24API:
         url = f"https://fr24api.flightradar24.com/api/flight-summary/full"
         params = {
             "flights": flights,
-            "flight_datetime_from": flight_datetime_from,
-            "flight_datetime_to": flight_datetime_to
+            "flight_datetime_from": self._validate_and_format_date(flight_datetime_from),
+            "flight_datetime_to": self._validate_and_format_date(flight_datetime_to)
         }
         params.update(kwargs)
         response = self._make_request("get", url, headers=self.session.headers, params=params)
@@ -651,76 +680,14 @@ class FR24API:
         self.logger.info(f"Altitude chart saved to {output_file}")
 
     def get_flight_ids_by_registration(self, registration, date_from, date_to, offset=0, limit=20, max_pages=5):
-        """Get all flight IDs for a specific aircraft registration within a date range.
-        
-        Args:
-            registration (str): Aircraft registration number
-            date_from (str): Start date in ISO format (YYYY-MM-DD)
-            date_to (str): End date in ISO format (YYYY-MM-DD)
-            offset (int): Starting offset for pagination
-            limit (int): Number of results per page (default 20, as this seems to be the API's internal limit)
-            max_pages (int): Maximum number of pages to fetch (default 5)
-            
-        Returns:
-            list: List of flight IDs (fr24_id)
-        """
-        # Format registration to match FR24's expected format
-        registration = registration.strip().upper()
-        
-        # Format dates to include time component if not present
-        if 'T' not in date_from:
-            date_from = f"{date_from}T00:00:00Z"
-        if 'T' not in date_to:
-            date_to = f"{date_to}T23:59:59Z"
-        
-        # Construct request using the light endpoint
-        url = f"https://fr24api.flightradar24.com/api/flight-summary/light"
+        # Get flight IDs for an aircraft registration within a date range.
+        url = f"https://fr24api.flightradar24.com/api/flight-ids"
         params = {
-            'registrations': registration,
-            'flight_datetime_from': date_from,
-            'flight_datetime_to': date_to,
-            'offset': offset,
-            'limit': limit
+            "registration": registration,
+            "date_from": self._validate_and_format_date(date_from),
+            "date_to": self._validate_and_format_date(date_to),
+            "offset": offset,
+            "limit": limit
         }
-        
-        self.logger.info(f"Fetching flight IDs for {registration} from {date_from} to {date_to} (offset {offset}, limit {limit})")
-        
-        try:
-            response = self._make_request('GET', url, params=params)
-            data = response.json()
-            
-            # Log the raw response for debugging
-            self.logger.debug(f"Raw API response: {data}")
-            
-            if not data or 'data' not in data:
-                self.logger.warning(f"No flight data found for {registration}")
-                return []
-                
-            flights = data['data']
-            flight_ids = [flight['fr24_id'] for flight in flights if 'fr24_id' in flight]
-            
-            self.logger.info(f"Found {len(flight_ids)} flights at offset {offset}")
-            
-            # If we got exactly the limit number of results and haven't reached max pages, there might be more
-            if len(flight_ids) == limit and offset < (max_pages * limit):
-                # Add a small delay to avoid rate limiting
-                time.sleep(0.5)
-                next_page_ids = self.get_flight_ids_by_registration(
-                    registration, date_from, date_to, offset + limit, limit, max_pages
-                )
-                # Only add unique flight IDs
-                for flight_id in next_page_ids:
-                    if flight_id not in flight_ids:
-                        flight_ids.append(flight_id)
-            # If we got fewer results than the limit, we've reached the end
-            elif len(flight_ids) < limit:
-                self.logger.info(f"Reached end of results at offset {offset}")
-            # If we've reached max pages
-            else:
-                self.logger.info(f"Reached maximum number of pages ({max_pages})")
-            
-            return flight_ids
-            
-        except Exception as e:
-            self.logger.error(f"Error fetching flight IDs: {str(e)}")
-            return []
+        response = self._make_request("get", url, headers=self.session.headers, params=params)
+        return response.json()

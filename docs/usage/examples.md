@@ -207,35 +207,23 @@ export FLIGHTRADAR_API_KEY="your_api_token"
 mkdir -p data
 
 # Get flight summary for a specific flight
-pyfr24 flight-summary --flight BA123 --from-date "2023-01-01" --to-date "2023-01-01" --output data/ba123_summary.json
+# Date format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ
+pyfr24 flight-summary --flight BA123 --from-date "2023-01-01" --to-date "2023-01-01"
 
-# Check if the command was successful
-if [ $? -eq 0 ]; then
-    echo "Flight summary saved to data/ba123_summary.json"
-    
-    # Option 1: Use Python to extract the flight ID
-    flight_id=$(python3 -c "import json; f=open('data/ba123_summary.json'); data=json.load(f); print(data.get('data', [{}])[0].get('fr24_id', ''))")
-    
-    # Option 2: Use jq if available (optional)
-    if command -v jq &> /dev/null; then
-        flight_id=$(jq -r '.data[0].fr24_id // empty' data/ba123_summary.json)
-    fi
-    
-    if [ ! -z "$flight_id" ]; then
-        echo "Found flight ID: $flight_id"
-        
-        # Export flight data using the extracted ID
-        pyfr24 export-flight --flight-id "$flight_id" --output-dir "data/flight_$flight_id"
-        echo "Flight data exported to data/flight_$flight_id"
-    else
-        echo "No flight ID found in summary"
-    fi
-else
-    echo "Error: Failed to retrieve flight summary"
-fi
+# The CLI automatically converts dates to ISO format:
+# - "2023-01-01" becomes "2023-01-01T00:00:00Z" (start of day)
+# - "2023-01-01" becomes "2023-01-01T23:59:59Z" (end of day)
+
+# You can also specify exact times:
+pyfr24 flight-summary --flight BA123 --from-date "2023-01-01T12:00:00Z" --to-date "2023-01-01T15:00:00Z"
 ```
 
 ### Usage notes
+
+- **Date formats**:
+  - Use `YYYY-MM-DD` for full day queries
+  - Use `YYYY-MM-DDTHH:MM:SSZ` for specific times
+  - The CLI handles conversion to ISO format automatically
 
 - **JSON processing**:
   - The package uses Python's built-in `json` module

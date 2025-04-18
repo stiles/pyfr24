@@ -45,17 +45,26 @@ def flight_summary_command(args):
     api = get_client(args)
     
     try:
+        # Convert date strings to ISO format if they don't include time
+        from_date = args.from_date
+        to_date = args.to_date
+        
+        if len(from_date) == 10:  # YYYY-MM-DD format
+            from_date = f"{from_date}T00:00:00Z"
+        if len(to_date) == 10:  # YYYY-MM-DD format
+            to_date = f"{to_date}T23:59:59Z"
+        
         if args.full:
             result = api.get_flight_summary_full(
                 flights=args.flight,
-                flight_datetime_from=args.from_date,
-                flight_datetime_to=args.to_date
+                flight_datetime_from=from_date,
+                flight_datetime_to=to_date
             )
         else:
             result = api.get_flight_summary_light(
                 flights=args.flight,
-                flight_datetime_from=args.from_date,
-                flight_datetime_to=args.to_date
+                flight_datetime_from=from_date,
+                flight_datetime_to=to_date
             )
         
         if args.output:
@@ -195,10 +204,19 @@ def flight_ids_command(args):
     api = get_client(args)
     
     try:
+        # Convert date strings to ISO format if they don't include time
+        from_date = args.from_date
+        to_date = args.to_date
+        
+        if len(from_date) == 10:  # YYYY-MM-DD format
+            from_date = f"{from_date}T00:00:00Z"
+        if len(to_date) == 10:  # YYYY-MM-DD format
+            to_date = f"{to_date}T23:59:59Z"
+        
         flight_ids = api.get_flight_ids_by_registration(
             args.registration,
-            args.from_date,
-            args.to_date
+            from_date,
+            to_date
         )
         
         if args.output:
