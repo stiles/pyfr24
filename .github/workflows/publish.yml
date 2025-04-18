@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch all history to ensure we have the latest code
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -26,4 +28,5 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         python setup.py sdist bdist_wheel
+        ls -l dist/  # List the built files to verify version
         twine upload --verbose dist/* 
