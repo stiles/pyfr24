@@ -40,7 +40,7 @@ def _configure_font():
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Roboto']
     else:
-        logger.warning("Roboto font not found. Using system default sans-serif font.")
+        logger.debug("Using system default sans-serif font")
 
 # Configure font when module is imported
 _configure_font()
@@ -119,14 +119,8 @@ class FR24API:
             'Authorization': f'Bearer {self.token}'
         })
         
-        # Initialize logger
-        self.logger = logging.getLogger(__name__)
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.INFO)
+        # Use the module-level logger
+        self.logger = logger
         
         # Configure retry strategy
         retry_strategy = Retry(
@@ -138,7 +132,7 @@ class FR24API:
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
         
-        self.logger.info("FR24API client initialized")
+        self.logger.debug("API client ready")
 
     def _make_request(self, method, url, **kwargs):
         """

@@ -18,10 +18,34 @@ These options are available for all commands:
 Get flight summary information:
 ```bash
 # Short form
-pyfr24 flight-summary -F AA123 -f "2023-01-01" -t "2023-01-01"
+pyfr24 flight-summary -F F94371 -f "2025-04-18" -t "2025-04-18"
 
 # Long form
-pyfr24 flight-summary --flight AA123 --from-date "2023-01-01" --to-date "2023-01-01"
+pyfr24 flight-summary --flight F94371 --from-date "2025-04-18" --to-date "2025-04-18"
+
+# Example response:
+{
+  "data": [
+    {
+      "fr24_id": "39f406c4",
+      "flight": "F94371",
+      "callsign": "FFT4371",
+      "operating_as": "FFT",
+      "painted_as": "FFT",
+      "type": "A20N",
+      "reg": "N390FR",
+      "orig_icao": "KDEN",
+      "datetime_takeoff": "2025-04-18T16:25:31Z",
+      "dest_icao": "KSNA",
+      "dest_icao_actual": "KSNA",
+      "datetime_landed": "2025-04-18T18:26:53Z",
+      "hex": "A48356",
+      "first_seen": "2025-04-18T16:05:23Z",
+      "last_seen": "2025-04-18T18:27:52Z",
+      "flight_ended": false
+    }
+  ]
+}
 ```
 
 ### Live flights
@@ -114,4 +138,4 @@ For detailed help on any command:
 ```bash
 pyfr24 --help
 pyfr24 <command> --help
-``` 
+```

@@ -6,12 +6,12 @@ import logging
 import sys
 from logging.handlers import RotatingFileHandler
 
-def configure_logging(level=logging.INFO, log_file=None, log_format=None):
+def configure_logging(level=logging.WARNING, log_file=None, log_format=None):
     """
     Configure logging for the Flightradar24 API client.
     
     Args:
-        level: Logging level (default: logging.INFO)
+        level: Logging level (default: logging.WARNING)
         log_file: Path to log file (default: None, which means log to console only)
         log_format: Log format string (default: None, which uses a standard format)
         
@@ -31,7 +31,7 @@ def configure_logging(level=logging.INFO, log_file=None, log_format=None):
     # Create formatter
     if log_format is None:
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            '%(message)s'  # Simple format for console output
         )
     else:
         formatter = logging.Formatter(log_format)
@@ -46,7 +46,11 @@ def configure_logging(level=logging.INFO, log_file=None, log_format=None):
         file_handler = RotatingFileHandler(
             log_file, maxBytes=10*1024*1024, backupCount=5
         )
-        file_handler.setFormatter(formatter)
+        # Use detailed format for file logging
+        file_formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
     
     return logger 
