@@ -7,6 +7,12 @@ repo_name: stiles/pyfr24
 # Ensure proper URL handling
 use_directory_urls: true
 
+# Configure static files
+docs_dir: docs
+site_dir: site
+extra_css:
+  - css/extra.css
+
 theme:
   name: material
   palette:
@@ -31,6 +37,7 @@ theme:
     - search.suggest
     - search.highlight
     - content.code.copy
+    - content.tabs.link
 
 plugins:
   - search
@@ -45,9 +52,19 @@ plugins:
             show_source: true
             show_root_heading: true
             show_category_heading: true
+  - glightbox:  # For image lightbox and zoom
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: true
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.highlight:
@@ -59,6 +76,11 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.images:
+      align: center
 
 nav:
   - Home: index.md

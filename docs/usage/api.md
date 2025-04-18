@@ -1,5 +1,20 @@
 # Python API reference
 
+## Understanding Flight Identifiers
+
+When working with flight data, it's important to understand the different types of identifiers:
+
+### Flight Numbers vs Callsigns vs FR24 IDs
+
+![Flight identifier example](../images/flight_identifiers.png)
+
+Using Frontier Airlines flight FFT4371 as an example:
+- **Flight Number** (e.g., `F94371`): The commercial flight number shown to passengers
+- **Callsign** (e.g., `FFT4371`): The radio callsign used by ATC (FFT = Frontier)
+- **FR24 ID** (e.g., `39f406c4`): Flightradar24's unique identifier for a specific flight instance
+
+The FR24 ID is unique to each flight instance, while flight numbers and callsigns can be reused daily.
+
 ## Basic usage
 
 ```python
@@ -25,20 +40,46 @@ live_flights = api.get_live_flights_by_registration("HL7637")
 
 ### Get flight summary
 
+You can retrieve flight summaries using either flight numbers or FR24 IDs:
+
 ```python
-# Get basic flight summary
+# Get basic flight summary using flight number
 summary_light = api.get_flight_summary_light(
-    flights="AA123",
-    flight_datetime_from="2023-01-01T00:00:00Z",
-    flight_datetime_to="2023-01-01T23:59:59Z"
+    flights="UA1930",  # United Airlines flight 1930
+    flight_datetime_from="2025-04-18T00:00:00Z",
+    flight_datetime_to="2025-04-18T23:59:59Z"
 )
 
-# Get detailed flight summary
-summary_full = api.get_flight_summary_full(
-    flights="AA123",
-    flight_datetime_from="2023-01-01T00:00:00Z",
-    flight_datetime_to="2023-01-01T23:59:59Z"
+# Get basic flight summary using FR24 ID
+summary_light = api.get_flight_summary_light(
+    flight_ids="39f406c4",  # Specific instance of Frontier flight 4371
+    flight_datetime_from="2025-04-18T00:00:00Z",
+    flight_datetime_to="2025-04-18T23:59:59Z"
 )
+
+# Get detailed flight summary for multiple flights
+summary_full = api.get_flight_summary_full(
+    flights=["UA1930", "UA253"],  # Multiple flight numbers
+    flight_datetime_from="2025-04-18T00:00:00Z",
+    flight_datetime_to="2025-04-18T23:59:59Z"
+)
+
+# Example response structure:
+{
+    'data': [{
+        'fr24_id': '39f406c4',
+        'flight': 'F94371',        # Flight number
+        'callsign': 'FFT4371',     # ATC callsign
+        'operating_as': 'FFT',     # Operator code
+        'type': 'A20N',           # Aircraft type
+        'reg': 'N390FR',          # Aircraft registration
+        'orig_icao': 'KDEN',      # Origin airport
+        'dest_icao': 'KSNA',      # Destination airport
+        'datetime_takeoff': '2025-04-18T16:25:31Z',
+        'datetime_landed': None,
+        'flight_ended': False
+    }]
+}
 ```
 
 ### Get flight tracks
