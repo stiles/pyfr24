@@ -218,23 +218,25 @@ pyfr24 flight-summary --flight BA123 --from-date "2023-01-01" --to-date "2023-01
 pyfr24 flight-summary --flight BA123 --from-date "2023-01-01T12:00:00Z" --to-date "2023-01-01T15:00:00Z"
 ```
 
-### Usage notes
+### Usage Notes
 
-- **Date formats**:
-  - Use `YYYY-MM-DD` for full day queries
-  - Use `YYYY-MM-DDTHH:MM:SSZ` for specific times
-  - The CLI handles conversion to ISO format automatically
+## Usage Notes
 
-- **JSON processing**:
-  - The package uses Python's built-in `json` module
-  - `jq` is optional and only used in the bash example
-  - You can use any JSON processing tool of your choice
+### Date Formats
+- Use `YYYY-MM-DD` for full day queries
+- Use `YYYY-MM-DDTHH:MM:SSZ` for specific times
+- The CLI handles conversion to ISO format automatically
 
-- **Output files**:
-  - Flight summary: `data/ba123_summary.json`
-  - Flight data: `data/flight_<flight_id>/`
+### JSON Processing
+- The package uses Python's built-in `json` module
+- `jq` is optional and only used in the bash example
+- You can use any JSON processing tool of your choice
 
-- **Error handling**:
-  - The script checks for command success
-  - Handles missing dependencies gracefully
-  - Validates flight ID extraction
+### Output Files
+- Flight summary: `data/ba123_summary.json`
+- Flight data: `data/flight_<flight_id>/`
+
+### Error Handling
+- The script checks for command success
+- Handles missing dependencies gracefully
+- Validates flight ID extraction
