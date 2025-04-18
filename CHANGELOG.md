@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.5] - 2024-04-18
+
+### Fixed
+- Improved date handling and validation in client methods
+  - Added centralized date validation and formatting
+  - Ensures consistent date formatting across all methods
+  - Better error messages for invalid date formats
+  - Fixed date parameter handling in CLI commands
+
 ## [0.1.4] - 2024-04-14
 
 ### Added
