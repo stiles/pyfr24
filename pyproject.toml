@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyfr24"
-version = "0.1.4"
+version = "0.1.5"
 description = "A Python client for the Flightradar24 API with CLI support"
 authors = ["Matt Stiles <mattstiles@gmail.com>"]
 readme = "README.md"
