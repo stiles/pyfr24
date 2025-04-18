@@ -222,26 +222,134 @@ class FR24API:
             "Invalid date format. Use YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ"
         )
 
-    def get_flight_summary_light(self, flights, flight_datetime_from, flight_datetime_to, **kwargs):
-        # Get basic flight summary information.
+    def _validate_flights(self, flights):
+        """
+        Validate and format flight IDs or flight numbers.
+        
+        Args:
+            flights: Single flight ID/number or list of flight IDs/numbers
+            
+        Returns:
+            str: Comma-separated list of flight IDs/numbers
+            
+        Raises:
+            FR24ValidationError: If flight IDs/numbers are invalid
+        """
+        if isinstance(flights, str):
+            # If it's already a comma-separated string, validate each ID/number
+            flight_list = [f.strip() for f in flights.split(',')]
+        elif isinstance(flights, (list, tuple)):
+            # Convert list to comma-separated string
+            flight_list = [str(f).strip() for f in flights]
+        else:
+            # Convert single value to string
+            flight_list = [str(flights).strip()]
+            
+        # Validate each flight ID/number
+        for flight in flight_list:
+            if not flight:
+                raise FR24ValidationError("Empty flight ID/number found")
+            # Flight number pattern (e.g., BA123, DL456)
+            flight_number_pattern = r'^[A-Z0-9]{2}\d{1,4}[A-Z]?$'
+            # Flight ID pattern (alphanumeric with underscores and hyphens)
+            flight_id_pattern = r'^[a-zA-Z0-9_-]+$'
+            if not (re.match(flight_number_pattern, flight) or re.match(flight_id_pattern, flight)):
+                raise FR24ValidationError(
+                    f"Invalid flight format: {flight}. Must be either a flight number (e.g., BA123) or flight ID"
+                )
+                
+        return ','.join(flight_list)
+
+    def get_flight_summary_light(self, flights=None, flight_ids=None, flight_datetime_from=None, flight_datetime_to=None, **kwargs):
+        """
+        Get basic flight summary information.
+        
+        Args:
+            flights: Single flight number or list of flight numbers (e.g., 'UA123' or ['UA123', 'BA456'])
+            flight_ids: Single flight ID or list of flight IDs (e.g., '38a384da' or ['38a384da', '38a400e9'])
+            flight_datetime_from: Start date in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ format
+            flight_datetime_to: End date in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ format
+            **kwargs: Additional parameters to pass to the API
+            
+        Returns:
+            dict: Flight summary data
+            
+        Raises:
+            FR24ValidationError: If flight numbers/IDs or dates are invalid
+            FR24Error: If API request fails
+        """
         url = f"https://fr24api.flightradar24.com/api/flight-summary/light"
-        params = {
-            "flights": flights,
-            "flight_datetime_from": self._validate_and_format_date(flight_datetime_from),
-            "flight_datetime_to": self._validate_and_format_date(flight_datetime_to)
-        }
+        params = {}
+        
+        # Handle flight numbers
+        if flights:
+            if isinstance(flights, (list, tuple)):
+                flights = ','.join(str(f) for f in flights)
+            params['flights'] = flights
+            
+        # Handle flight IDs
+        if flight_ids:
+            if isinstance(flight_ids, (list, tuple)):
+                flight_ids = ','.join(str(f) for f in flight_ids)
+            params['flight_ids'] = flight_ids
+            
+        # Validate at least one type of flight identifier is provided
+        if not flights and not flight_ids:
+            raise FR24ValidationError("Either flights or flight_ids must be provided")
+            
+        # Handle dates
+        if flight_datetime_from:
+            params['flight_datetime_from'] = self._validate_and_format_date(flight_datetime_from)
+        if flight_datetime_to:
+            params['flight_datetime_to'] = self._validate_and_format_date(flight_datetime_to)
+            
         params.update(kwargs)
         response = self._make_request("get", url, headers=self.session.headers, params=params)
         return response.json()
 
-    def get_flight_summary_full(self, flights, flight_datetime_from, flight_datetime_to, **kwargs):
-        # Get detailed flight summary information.
+    def get_flight_summary_full(self, flights=None, flight_ids=None, flight_datetime_from=None, flight_datetime_to=None, **kwargs):
+        """
+        Get detailed flight summary information.
+        
+        Args:
+            flights: Single flight number or list of flight numbers (e.g., 'UA123' or ['UA123', 'BA456'])
+            flight_ids: Single flight ID or list of flight IDs (e.g., '38a384da' or ['38a384da', '38a400e9'])
+            flight_datetime_from: Start date in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ format
+            flight_datetime_to: End date in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ format
+            **kwargs: Additional parameters to pass to the API
+            
+        Returns:
+            dict: Detailed flight summary data
+            
+        Raises:
+            FR24ValidationError: If flight numbers/IDs or dates are invalid
+            FR24Error: If API request fails
+        """
         url = f"https://fr24api.flightradar24.com/api/flight-summary/full"
-        params = {
-            "flights": flights,
-            "flight_datetime_from": self._validate_and_format_date(flight_datetime_from),
-            "flight_datetime_to": self._validate_and_format_date(flight_datetime_to)
-        }
+        params = {}
+        
+        # Handle flight numbers
+        if flights:
+            if isinstance(flights, (list, tuple)):
+                flights = ','.join(str(f) for f in flights)
+            params['flights'] = flights
+            
+        # Handle flight IDs
+        if flight_ids:
+            if isinstance(flight_ids, (list, tuple)):
+                flight_ids = ','.join(str(f) for f in flight_ids)
+            params['flight_ids'] = flight_ids
+            
+        # Validate at least one type of flight identifier is provided
+        if not flights and not flight_ids:
+            raise FR24ValidationError("Either flights or flight_ids must be provided")
+            
+        # Handle dates
+        if flight_datetime_from:
+            params['flight_datetime_from'] = self._validate_and_format_date(flight_datetime_from)
+        if flight_datetime_to:
+            params['flight_datetime_to'] = self._validate_and_format_date(flight_datetime_to)
+            
         params.update(kwargs)
         response = self._make_request("get", url, headers=self.session.headers, params=params)
         return response.json()
