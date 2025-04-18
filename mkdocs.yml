@@ -96,5 +96,7 @@ nav:
     - Client: reference/client.md
     - CLI: reference/cli.md
     - Exceptions: reference/exceptions.md
-  - Contributing: contributing.md
+  - Contributing:
+    - Guidelines: contributing.md
+    - Version Checklist: contributing/version-checklist.md
   - Changelog: changelog/
