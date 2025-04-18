@@ -97,4 +97,4 @@ nav:
     - CLI: reference/cli.md
     - Exceptions: reference/exceptions.md
   - Contributing: contributing.md
-  - Changelog: changelog/index.md
+  - Changelog: changelog/
