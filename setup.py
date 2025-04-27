@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pyfr24',
-    version='0.1.6',
+    version='0.1.7',
     description='A Python client for the Flightradar24 API with CLI support',
     long_description=long_description,
     long_description_content_type="text/markdown",

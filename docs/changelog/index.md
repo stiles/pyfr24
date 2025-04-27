@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2024-06-26
+
+### Added
+- `smart-export` CLI command for interactive export by flight number and date.
+- Automatic output directory naming for exports.
+- `toplines.json` summary file in each export directory.
+- Progress messages for summary, track fetching, and export steps.
+
+### Fixed
+- Correct date range handling for summary queries.
+
+### Improved
+- User feedback and workflow for CLI exports.
+
 ## [0.1.6] - 2024-04-18
 
 ### Added
