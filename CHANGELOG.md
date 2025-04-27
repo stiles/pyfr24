@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.7] - 2024-06-26
+
+### Added
+- `smart-export` CLI command for interactive export by flight number and date.
+- Automatic output directory naming for exports.
+- `toplines.json` summary file in each export directory.
+- Progress messages for summary, track fetching, and export steps.
+
+### Fixed
+- Correct date range handling for summary queries.
+
+### Improved
+- User feedback and workflow for CLI exports.
+
 ## [0.1.6] - 2024-04-18
 
 ### Added
@@ -20,15 +34,6 @@
 ### Fixed
 - Fixed font warning message in visualization code
 - Improved error handling in client initialization
-
-## [0.1.5] - 2024-04-18
-
-### Fixed
-- Improved date handling and validation in client methods
-  - Added centralized date validation and formatting
-  - Ensures consistent date formatting across all methods
-  - Better error messages for invalid date formats
-  - Fixed date parameter handling in CLI commands
 
 ## [0.1.4] - 2024-04-14
 

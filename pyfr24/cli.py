@@ -230,6 +230,105 @@ def flight_ids_command(args):
         print(f"Error: {e}")
         sys.exit(1)
 
+def smart_export_flight_command(args):
+    logger = setup_logging(args)
+    api = get_client(args)
+    try:
+        print("Fetching summary...")
+        # Call smart_export_flight with auto_select if provided
+        result = api.smart_export_flight(
+            flight_number=args.flight,
+            date=args.date,
+            output_dir=args.output_dir,
+            background=args.background,
+            orientation=args.orientation,
+            auto_select=args.auto_select,
+        )
+        options = result.get('options', [])
+        selected = result.get('selected')
+        output_dir = result.get('output_dir')
+        error = result.get('error')
+        # If multiple matches and no auto_select, prompt user
+        if not selected and options:
+            print(f"Multiple flights found for {args.flight} on {args.date}:")
+            for idx, opt in enumerate(options):
+                orig = opt.get('orig_icao') or opt.get('origin') or 'ORIG'
+                dest = opt.get('dest_icao_actual') or opt.get('dest_icao') or opt.get('destination') or 'DEST'
+                dep = opt.get('datetime_takeoff') or opt.get('first_seen') or 'N/A'
+                arr = opt.get('datetime_landed') or opt.get('last_seen') or 'N/A'
+                reg = opt.get('reg') or opt.get('registration') or 'N/A'
+                typ = opt.get('type') or 'N/A'
+                fid = opt.get('fr24_id') or opt.get('id') or 'N/A'
+                print(f"[{idx}] {fid} | {orig}  {dest} | {dep[:16]}–{arr[:16]} | {reg} | {typ}")
+            # Prompt user
+            while True:
+                try:
+                    sel = input(f"Select a flight to export [0-{len(options)-1}]: ")
+                    sel = int(sel)
+                    if 0 <= sel < len(options):
+                        break
+                    else:
+                        print("Invalid selection. Try again.")
+                except Exception:
+                    print("Invalid input. Enter a number.")
+            print("Fetching tracks and exporting files...")
+            # Call again with auto_select=sel
+            result = api.smart_export_flight(
+                flight_number=args.flight,
+                date=args.date,
+                output_dir=args.output_dir,
+                background=args.background,
+                orientation=args.orientation,
+                auto_select=sel,
+            )
+            selected = result.get('selected')
+            output_dir = result.get('output_dir')
+        if selected and output_dir:
+            print("Exporting files...")
+            orig = selected.get('orig_icao') or selected.get('origin') or 'ORIG'
+            dest = selected.get('dest_icao_actual') or selected.get('dest_icao') or selected.get('destination') or 'DEST'
+            dep = selected.get('datetime_takeoff') or selected.get('first_seen') or 'N/A'
+            arr = selected.get('datetime_landed') or selected.get('last_seen') or 'N/A'
+            reg = selected.get('reg') or selected.get('registration') or 'N/A'
+            typ = selected.get('type') or 'N/A'
+            fid = selected.get('fr24_id') or selected.get('id') or 'N/A'
+            # Write toplines.json
+            toplines = {
+                "flight_number": args.flight,
+                "flight_id": fid,
+                "date": args.date,
+                "origin": orig,
+                "destination": dest,
+                "departure_time": dep,
+                "arrival_time": arr,
+                "registration": reg,
+                "aircraft_type": typ
+            }
+            import os
+            toplines_path = os.path.join(output_dir, "toplines.json")
+            with open(toplines_path, "w") as f:
+                json.dump(toplines, f, indent=2)
+            print(f"\nExporting flight {fid} ({args.flight}) from {orig} to {dest} on {dep[:16]}–{arr[:16]}")
+            print(f"Output directory: {output_dir}")
+            print("Files created:")
+            print("  - data.csv: CSV of flight track points")
+            print("  - points.geojson: GeoJSON of track points")
+            print("  - line.geojson: GeoJSON LineString connecting the points")
+            print("  - track.kml: Flight path in KML format")
+            print("  - map.png: Map visualization of the flight path")
+            print("  - speed.png: Line chart of speed over time")
+            print("  - altitude.png: Line chart of altitude over time")
+            print("  - toplines.json: Topline summary of the exported flight")
+            print("\nExport complete!")
+        elif error:
+            print(f"Error: {error}")
+        else:
+            print("Unknown error or no flights found.")
+    except Exception as e:
+        logger.error(f"Error in smart export: {e}")
+        print(f"Error: {e}")
+        sys.exit(1)
+
 def create_parser():
     """Create the command-line argument parser."""
     parser = argparse.ArgumentParser(
@@ -301,6 +400,16 @@ def create_parser():
     flight_ids_parser.add_argument("-t", "--to-date", required=True, help="End date (YYYY-MM-DD)")
     flight_ids_parser.add_argument("-o", "--output", help="Output file path (JSON)")
     flight_ids_parser.set_defaults(func=flight_ids_command)
+    
+    # Smart export command
+    smart_export_parser = subparsers.add_parser("smart-export", help="Smart export by flight number and date with interactive selection")
+    smart_export_parser.add_argument("-F", "--flight", required=True, help="Flight number or callsign")
+    smart_export_parser.add_argument("-d", "--date", required=True, help="Date (YYYY-MM-DD)")
+    smart_export_parser.add_argument("-o", "--output-dir", help="Output directory path")
+    smart_export_parser.add_argument("--background", choices=['carto', 'osm', 'stamen', 'esri'], default='carto', help="Map background provider")
+    smart_export_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], default='horizontal', help="Map orientation (16:9, 9:16, or auto-detect)")
+    smart_export_parser.add_argument("--auto-select", help="Auto-select: 'latest', 'earliest', or index (for scripting)")
+    smart_export_parser.set_defaults(func=smart_export_flight_command)
     
     return parser
 

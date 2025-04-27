@@ -132,6 +132,41 @@ pyfr24 flight-ids -R N216MH -f "2025-01-01" -t "2025-04-10"
 pyfr24 flight-ids -R N216MH -f "2025-01-01" -t "2025-04-10" -o flight_ids.json
 ```
 
+### Smart export
+
+The `smart-export` command lets you export all data for a flight by flight number and date, with interactive selection if there are multiple matches.
+
+**Example:**
+```bash
+pyfr24 smart-export --flight UA2151 --date 2025-04-22
+```
+
+- If multiple flights are found, you'll see a summary and be prompted to select.
+- The output directory is named automatically for clarity.
+- A `toplines.json` file is created with a summary of the exported flight.
+
+**Arguments:**
+- `--flight` (required): Flight number or callsign
+- `--date` (required): Date (YYYY-MM-DD)
+- `--output-dir`: Custom output directory (optional)
+- `--background`, `--orientation`: Map/chart options (optional)
+- `--auto-select`: For scripting (e.g., `latest`, `earliest`, or index)
+
+**Toplines summary example:**
+```json
+{
+  "flight_number": "UA2151",
+  "flight_id": "3a01b036",
+  "date": "2025-04-22",
+  "origin": "KEWR",
+  "destination": "KDEN",
+  "departure_time": "2025-04-22T14:48:36Z",
+  "arrival_time": "2025-04-22T18:53:23Z",
+  "registration": "N28457",
+  "aircraft_type": "B739"
+}
+```
+
 ## Getting help
 
 For detailed help on any command:

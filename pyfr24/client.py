@@ -793,3 +793,67 @@ class FR24API:
         }
         response = self._make_request("get", url, headers=self.session.headers, params=params)
         return response.json()
+
+    def smart_export_flight(
+        self,
+        flight_number,
+        date,
+        output_dir=None,
+        background='carto',
+        orientation='horizontal',
+        auto_select=None,  # 'latest', 'earliest', or integer index
+        summary_mode='full',  # or 'light'
+    ):
+        """
+        Look up a flight by number and date, select the correct segment if multiple, and export data for the selected flight.
+        If multiple matches and auto_select is None, returns a list of options for the caller to handle (e.g., for CLI prompt).
+        Returns a dict with keys: 'output_dir', 'selected', and 'options' (if multiple).
+        """
+        # Convert date to full-day range if needed
+        if len(date) == 10 and date.count('-') == 2:
+            flight_datetime_from = f"{date}T00:00:00Z"
+            flight_datetime_to = f"{date}T23:59:59Z"
+        else:
+            flight_datetime_from = date
+            flight_datetime_to = date
+        # 1. Fetch flight summary
+        if summary_mode == 'full':
+            summary = self.get_flight_summary_full(flights=flight_number, flight_datetime_from=flight_datetime_from, flight_datetime_to=flight_datetime_to)
+        else:
+            summary = self.get_flight_summary_light(flights=flight_number, flight_datetime_from=flight_datetime_from, flight_datetime_to=flight_datetime_to)
+        data = summary.get('data', [])
+        if not data:
+            return {'output_dir': None, 'selected': None, 'options': [], 'error': f"No flights found for {flight_number} on {date}"}
+
+        # 2. Handle single/multiple matches
+        if len(data) == 1 or auto_select is not None:
+            if len(data) == 1:
+                selected = data[0]
+            else:
+                # auto_select: 'latest', 'earliest', or integer index
+                if auto_select == 'latest':
+                    selected = max(data, key=lambda x: x.get('datetime_takeoff', '') or x.get('first_seen', ''))
+                elif auto_select == 'earliest':
+                    selected = min(data, key=lambda x: x.get('datetime_takeoff', '') or x.get('first_seen', ''))
+                elif isinstance(auto_select, int) and 0 <= auto_select < len(data):
+                    selected = data[auto_select]
+                else:
+                    return {'output_dir': None, 'selected': None, 'options': data, 'error': 'Invalid auto_select value'}
+            # 3. Generate smart output_dir if not provided
+            orig = selected.get('orig_icao') or selected.get('origin') or 'ORIG'
+            dest = selected.get('dest_icao_actual') or selected.get('dest_icao') or selected.get('destination') or 'DEST'
+            date_str = (selected.get('datetime_takeoff') or selected.get('first_seen') or date)[:10]
+            flight_id = selected.get('fr24_id') or selected.get('id') or 'UNKNOWNID'
+            dep_time = (selected.get('datetime_takeoff') or selected.get('first_seen') or '').replace(':','').replace('-','').replace('T','')[:8]
+            if not output_dir:
+                # e.g., data/UA2151_2025-04-22_KEWR-KDEN_3a01b036
+                safe_flight = str(flight_number).replace('/', '_').replace(' ', '')
+                safe_orig = orig.replace('/', '_')
+                safe_dest = dest.replace('/', '_')
+                output_dir = f"data/{safe_flight}_{date_str}_{safe_orig}-{safe_dest}_{flight_id}"
+            # 4. Export
+            export_dir = self.export_flight_data(flight_id, output_dir=output_dir, background=background, orientation=orientation)
+            return {'output_dir': export_dir, 'selected': selected, 'options': data}
+        else:
+            # Multiple matches, no auto_select: return options for caller to prompt
+            return {'output_dir': None, 'selected': None, 'options': data}
