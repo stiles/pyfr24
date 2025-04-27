@@ -31,6 +31,7 @@ except FR24AuthenticationError as e:
 ```
 
 Common causes:
+
 - Invalid API token
 - Expired token
 - Missing token
@@ -51,6 +52,7 @@ except FR24NotFoundError as e:
 ```
 
 Common cases:
+
 - Invalid flight ID
 - Non-existent flight number
 - Invalid aircraft registration
@@ -71,6 +73,7 @@ except FR24RateLimitError as e:
 ```
 
 Best practices:
+
 - Implement exponential backoff
 - Cache frequently accessed data
 - Batch requests when possible
@@ -90,6 +93,7 @@ except FR24ServerError as e:
 ```
 
 Common status codes:
+
 - 500: Internal Server Error
 - 502: Bad Gateway
 - 503: Service Unavailable
@@ -110,6 +114,7 @@ except FR24ClientError as e:
 ```
 
 Common status codes:
+
 - 400: Bad Request
 - 404: Not Found
 - 422: Validation Error
@@ -129,6 +134,7 @@ except FR24ValidationError as e:
 ```
 
 Common cases:
+
 - Invalid date format
 - Invalid coordinates
 - Missing required parameters
@@ -149,6 +155,7 @@ except FR24ConnectionError as e:
 ```
 
 Common causes:
+
 - Network timeout
 - DNS resolution failure
 - Connection refused

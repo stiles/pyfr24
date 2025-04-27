@@ -146,6 +146,7 @@ pyfr24 smart-export --flight UA2151 --date 2025-04-22
 - A `toplines.json` file is created with a summary of the exported flight.
 
 **Arguments:**
+
 - `--flight` (required): Flight number or callsign
 - `--date` (required): Date (YYYY-MM-DD)
 - `--output-dir`: Custom output directory (optional)

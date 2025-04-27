@@ -28,6 +28,7 @@ python run_tests.py
 ## Code style
 
 We follow PEP 8 guidelines with these modifications:
+
 - Line length limit: 100 characters
 - Use double quotes for strings
 - Use trailing commas in multi-line structures
@@ -59,6 +60,7 @@ git push origin feature-name
 ## Documentation
 
 When adding new features, include:
+
 - Docstrings for new functions/methods
 - Updates to documentation files
 - Example usage in docstrings
@@ -74,6 +76,7 @@ When adding new features, include:
 ## Reporting issues
 
 When reporting issues, include:
+
 - Python version
 - Pyfr24 version
 - Operating system
@@ -84,6 +87,7 @@ When reporting issues, include:
 ## Feature requests
 
 For feature requests:
+
 - Check existing issues first
 - Describe the feature
 - Explain the use case
