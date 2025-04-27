@@ -9,6 +9,7 @@ When working with flight data, it's important to understand the different types 
 ![Flight identifier example](../images/flight_identifiers.png)
 
 Using Frontier Airlines flight FFT4371 as an example:
+
 - **Flight Number** (e.g., `F94371`): The commercial flight number shown to passengers
 - **Callsign** (e.g., `FFT4371`): The radio callsign used by ATC (FFT = Frontier)
 - **FR24 ID** (e.g., `39f406c4`): Flightradar24's unique identifier for a specific flight instance
