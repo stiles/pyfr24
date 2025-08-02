@@ -63,8 +63,26 @@ pyfr24 export-flight [OPTIONS]
 Options:
   -i, --flight-id TEXT       Flight ID [required]
   -o, --output-dir TEXT     Output directory path
-  --background TEXT         Background map provider (carto, osm, stamen, esri)
+  --background TEXT         Background map provider (carto-light, carto-dark, osm, esri-topo, esri-satellite)
   --orientation TEXT        Plot orientation (horizontal, vertical, auto)
+  --timezone TEXT           Convert timestamps to specified timezone (e.g., America/New_York)
+```
+
+### smart-export
+
+Interactive export by flight number and date with automatic flight selection.
+
+```bash
+pyfr24 smart-export [OPTIONS]
+
+Options:
+  --flight TEXT             Flight number or callsign [required]
+  --date TEXT              Date (YYYY-MM-DD) [required]  
+  -o, --output-dir TEXT    Output directory path
+  --background TEXT        Background map provider (carto-light, carto-dark, osm, esri-topo, esri-satellite)
+  --orientation TEXT       Plot orientation (horizontal, vertical, auto)
+  --timezone TEXT          Convert timestamps to specified timezone (e.g., America/New_York)
+  --auto-select TEXT       Auto-select flight (latest, earliest, or index number)
 ```
 
 ### airline-info
@@ -133,9 +151,15 @@ pyfr24 flight-summary -F AA123 -f "2023-01-01" -t "2023-01-01" -o summary.json
 # Basic export
 pyfr24 export-flight -i 39a84c3c -o data/flight_39a84c3c
 
+# With timezone conversion and enhanced map background
+pyfr24 export-flight -i 39a84c3c \
+    --background esri-satellite \
+    --timezone "America/New_York" \
+    --output-dir data/flight_39a84c3c
+
 # With custom background and orientation
 pyfr24 export-flight -i 39a84c3c \
-    --background osm \
+    --background carto-dark \
     --orientation vertical \
     --output-dir data/flight_39a84c3c
 ```
@@ -156,4 +180,20 @@ pyfr24 flight-ids -R N216MH \
     -f "2025-01-01" \
     -t "2025-04-10" \
     -o flight_ids.json
+```
+
+### Smart Export
+```bash
+# Interactive export by flight number and date
+pyfr24 smart-export --flight DL562 --date 2025-08-02
+
+# With timezone conversion to Eastern Time
+pyfr24 smart-export --flight DL562 --date 2025-08-02 \
+    --timezone "America/New_York"
+
+# With satellite background and auto-select latest flight
+pyfr24 smart-export --flight DL562 --date 2025-08-02 \
+    --background esri-satellite \
+    --auto-select latest \
+    --timezone "America/New_York"
 ``` 

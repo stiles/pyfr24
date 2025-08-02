@@ -9,6 +9,7 @@ import json
 import argparse
 import logging
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from . import FR24API, configure_logging
 
 def setup_logging(args):
@@ -38,6 +39,52 @@ def get_client(args):
 def format_json(data):
     """Format JSON data for display."""
     return json.dumps(data, indent=2)
+
+def _convert_timestamp(ts_str, tz_str):
+    """Convert a timestamp string to a different timezone."""
+    if not tz_str or not ts_str or 'N/A' in ts_str:
+        return ts_str
+    try:
+        target_tz = ZoneInfo(tz_str)
+        dt_obj = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+        local_dt = dt_obj.astimezone(target_tz)
+        return local_dt.isoformat()
+    except (ZoneInfoNotFoundError, ValueError) as e:
+        # Log this error or handle it as needed
+        return ts_str
+
+def _format_readable_timestamp(iso_str, tz_str=None):
+    """Formats an ISO timestamp string into a human-readable format."""
+    if not iso_str or 'N/A' in iso_str:
+        return "N/A"
+    try:
+        dt_obj = datetime.fromisoformat(iso_str)
+
+        # Get timezone abbreviation, with special handling for common US timezones
+        tz_name = dt_obj.tzname()
+        if tz_str:
+            if 'America/New_York' in tz_str:
+                tz_name = 'ET'
+            elif 'America/Chicago' in tz_str:
+                tz_name = 'CT'
+            elif 'America/Denver' in tz_str:
+                tz_name = 'MT'
+            elif 'America/Los_Angeles' in tz_str:
+                tz_name = 'PT'
+
+        # Format time with a.m./p.m.
+        hour = int(dt_obj.strftime('%I'))
+        minute = dt_obj.strftime('%M')
+        period = dt_obj.strftime('%p').lower().replace('am', 'a.m.').replace('pm', 'p.m.')
+        time_str = f"{hour}:{minute} {period}"
+
+        # Format final string: "August 2, 2025, at 10:55 a.m. ET"
+        return f"{dt_obj.strftime('%B')} {dt_obj.day}, {dt_obj.year}, at {time_str} {tz_name}"
+
+    except (ValueError, TypeError):
+        return iso_str
+
+
 
 def flight_summary_command(args):
     """Handle the flight summary command."""
@@ -125,7 +172,8 @@ def export_flight_command(args):
             args.flight_id, 
             output_dir=args.output_dir,
             background=args.background,
-            orientation=args.orientation
+            orientation=args.orientation,
+            timezone=args.timezone
         )
         print(f"Flight data exported to directory: {output_dir}")
         print("Files created:")
@@ -235,7 +283,7 @@ def smart_export_flight_command(args):
     api = get_client(args)
     try:
         print("Fetching summary...")
-        # Call smart_export_flight with auto_select if provided
+                    # Call smart_export_flight with auto_select if provided
         result = api.smart_export_flight(
             flight_number=args.flight,
             date=args.date,
@@ -243,6 +291,7 @@ def smart_export_flight_command(args):
             background=args.background,
             orientation=args.orientation,
             auto_select=args.auto_select,
+            timezone=args.timezone,
         )
         options = result.get('options', [])
         selected = result.get('selected')
@@ -280,6 +329,8 @@ def smart_export_flight_command(args):
                 background=args.background,
                 orientation=args.orientation,
                 auto_select=sel,
+                timezone=args.timezone,
+                labels=args.labels,
             )
             selected = result.get('selected')
             output_dir = result.get('output_dir')
@@ -287,8 +338,12 @@ def smart_export_flight_command(args):
             print("Exporting files...")
             orig = selected.get('orig_icao') or selected.get('origin') or 'ORIG'
             dest = selected.get('dest_icao_actual') or selected.get('dest_icao') or selected.get('destination') or 'DEST'
-            dep = selected.get('datetime_takeoff') or selected.get('first_seen') or 'N/A'
-            arr = selected.get('datetime_landed') or selected.get('last_seen') or 'N/A'
+            dep_utc = selected.get('datetime_takeoff') or selected.get('first_seen') or 'N/A'
+            arr_utc = selected.get('datetime_landed') or selected.get('last_seen') or 'N/A'
+            dep_iso = _convert_timestamp(dep_utc, args.timezone)
+            arr_iso = _convert_timestamp(arr_utc, args.timezone)
+            dep_readable = _format_readable_timestamp(dep_iso, args.timezone)
+            arr_readable = _format_readable_timestamp(arr_iso, args.timezone)
             reg = selected.get('reg') or selected.get('registration') or 'N/A'
             typ = selected.get('type') or 'N/A'
             fid = selected.get('fr24_id') or selected.get('id') or 'N/A'
@@ -299,8 +354,10 @@ def smart_export_flight_command(args):
                 "date": args.date,
                 "origin": orig,
                 "destination": dest,
-                "departure_time": dep,
-                "arrival_time": arr,
+                "departure_time": dep_iso,
+                "arrival_time": arr_iso,
+                "departure_time_readable": dep_readable,
+                "arrival_time_readable": arr_readable,
                 "registration": reg,
                 "aircraft_type": typ
             }
@@ -308,7 +365,7 @@ def smart_export_flight_command(args):
             toplines_path = os.path.join(output_dir, "toplines.json")
             with open(toplines_path, "w") as f:
                 json.dump(toplines, f, indent=2)
-            print(f"\nExporting flight {fid} ({args.flight}) from {orig} to {dest} on {dep[:16]}–{arr[:16]}")
+            print(f"\nExporting flight {fid} ({args.flight}) from {orig} to {dest} on {dep_iso[:16]}–{arr_iso[:16]}")
             print(f"Output directory: {output_dir}")
             print("Files created:")
             print("  - data.csv: CSV of flight track points")
@@ -370,8 +427,13 @@ def create_parser():
     export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data to CSV, GeoJSON, KML and plot")
     export_flight_parser.add_argument("-i", "--flight-id", required=True, help="Flight ID")
     export_flight_parser.add_argument("-o", "--output-dir", help="Output directory path")
-    export_flight_parser.add_argument("--background", choices=['carto', 'osm', 'stamen', 'esri'], default='carto', help="Map background provider")
+    export_flight_parser.add_argument("--background", 
+                                      choices=['carto-light', 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'], 
+                                      default='carto-light', 
+                                      help="Map background. 'carto-light' (default), 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'")
     export_flight_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], default='horizontal', help="Map orientation (16:9, 9:16, or auto-detect)")
+
+    export_flight_parser.add_argument("--timezone", help="Convert UTC timestamps to a specific timezone (e.g., 'America/New_York')")
     export_flight_parser.set_defaults(func=export_flight_command)
     
     # Airline info command
@@ -406,9 +468,14 @@ def create_parser():
     smart_export_parser.add_argument("-F", "--flight", required=True, help="Flight number or callsign")
     smart_export_parser.add_argument("-d", "--date", required=True, help="Date (YYYY-MM-DD)")
     smart_export_parser.add_argument("-o", "--output-dir", help="Output directory path")
-    smart_export_parser.add_argument("--background", choices=['carto', 'osm', 'stamen', 'esri'], default='carto', help="Map background provider")
+    smart_export_parser.add_argument("--background", 
+                                     choices=['carto-light', 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'], 
+                                     default='carto-light', 
+                                     help="Map background. 'carto-light' (default), 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'")
     smart_export_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], default='horizontal', help="Map orientation (16:9, 9:16, or auto-detect)")
+
     smart_export_parser.add_argument("--auto-select", help="Auto-select: 'latest', 'earliest', or index (for scripting)")
+    smart_export_parser.add_argument("--timezone", help="Convert UTC timestamps to a specific timezone (e.g., 'America/New_York')")
     smart_export_parser.set_defaults(func=smart_export_flight_command)
     
     return parser
@@ -425,4 +492,4 @@ def main():
     args.func(args)
 
 if __name__ == "__main__":
-    main() 
+    main()

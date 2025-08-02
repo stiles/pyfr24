@@ -78,14 +78,21 @@ Export flight data with various options:
 pyfr24 export-flight -i 39a84c3c -o data/flight_39a84c3c
 
 # With different background maps
-pyfr24 export-flight -i 39a84c3c --background osm  # OpenStreetMap
-pyfr24 export-flight -i 39a84c3c --background stamen  # Stamen Terrain
-pyfr24 export-flight -i 39a84c3c --background esri  # ESRI World TopoMap
+pyfr24 export-flight -i 39a84c3c --background carto-light    # CartoDB Light (default)
+pyfr24 export-flight -i 39a84c3c --background carto-dark     # CartoDB Dark
+pyfr24 export-flight -i 39a84c3c --background osm            # OpenStreetMap
+pyfr24 export-flight -i 39a84c3c --background esri-topo      # ESRI World TopoMap
+pyfr24 export-flight -i 39a84c3c --background esri-satellite # ESRI World Imagery
 
 # With different orientations
 pyfr24 export-flight -i 39a84c3c --orientation horizontal  # 16:9 aspect ratio
 pyfr24 export-flight -i 39a84c3c --orientation vertical    # 9:16 aspect ratio
 pyfr24 export-flight -i 39a84c3c --orientation auto       # Auto-detect
+
+# With timezone conversion
+pyfr24 export-flight -i 39a84c3c --timezone "America/New_York"      # Eastern Time
+pyfr24 export-flight -i 39a84c3c --timezone "America/Los_Angeles"   # Pacific Time
+pyfr24 export-flight -i 39a84c3c --timezone "Europe/London"         # GMT/BST
 ```
 
 ### Airline information
@@ -150,7 +157,9 @@ pyfr24 smart-export --flight UA2151 --date 2025-04-22
 - `--flight` (required): Flight number or callsign
 - `--date` (required): Date (YYYY-MM-DD)
 - `--output-dir`: Custom output directory (optional)
-- `--background`, `--orientation`: Map/chart options (optional)
+- `--background`: Map background (carto-light, carto-dark, osm, esri-topo, esri-satellite)
+- `--orientation`: Chart orientation (horizontal, vertical, auto)
+- `--timezone`: Convert timestamps to specified timezone (e.g., America/New_York)
 - `--auto-select`: For scripting (e.g., `latest`, `earliest`, or index)
 
 **Toplines summary example:**
@@ -163,6 +172,25 @@ pyfr24 smart-export --flight UA2151 --date 2025-04-22
   "destination": "KDEN",
   "departure_time": "2025-04-22T14:48:36Z",
   "arrival_time": "2025-04-22T18:53:23Z",
+  "departure_time_readable": "April 22, 2025, at 2:48 p.m. UTC",
+  "arrival_time_readable": "April 22, 2025, at 6:53 p.m. UTC",
+  "registration": "N28457",
+  "aircraft_type": "B739"
+}
+```
+
+**With timezone conversion (--timezone "America/New_York"):**
+```json
+{
+  "flight_number": "UA2151",
+  "flight_id": "3a01b036",
+  "date": "2025-04-22",
+  "origin": "KEWR",
+  "destination": "KDEN",
+  "departure_time": "2025-04-22T10:48:36-04:00",
+  "arrival_time": "2025-04-22T14:53:23-04:00",
+  "departure_time_readable": "April 22, 2025, at 10:48 a.m. ET",
+  "arrival_time_readable": "April 22, 2025, at 2:53 p.m. ET",
   "registration": "N28457",
   "aircraft_type": "B739"
 }

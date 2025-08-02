@@ -6,9 +6,12 @@ Welcome to the Pyfr24 documentation. This Python package provides an interface t
 
 - **Flight data retrieval**: Access live flights, historical tracks and flight information
 - **Data export**: Export flight data in multiple formats (CSV, GeoJSON and KML)
-- **Map visualization**: Generate flight path visualizations with:
-    - Background maps (CartoDB, OpenStreetMap, Stamen, ESRI)
-    - Orientation (16:9 horizontal, 9:16 vertical or auto-detect)
+- **Enhanced visualizations**: Publication-ready charts and maps with:
+    - Professional chart design with clean typography and smart formatting
+    - Multiple map backgrounds (CartoDB, OpenStreetMap, ESRI satellite/topo)
+    - Timezone conversion with automatic DST handling
+    - Human-readable time labels and date formatting
+    - Orientation options (16:9 horizontal, 9:16 vertical or auto-detect)
     - High-quality output (300 DPI)
 - **Flight analysis**: Create speed and altitude profile charts
 - **Command-line interface**: Access features without writing code
@@ -19,6 +22,7 @@ Welcome to the Pyfr24 documentation. This Python package provides an interface t
 
 - [Installation guide](installation.md)
 - [Quick start guide](usage/quickstart.md)
+- [Enhanced visualizations](features/enhanced-visualizations.md)
 - [CLI reference](usage/cli.md)
 - [Python API reference](usage/api.md)
 - [Example usage](usage/examples.md)
@@ -57,11 +61,12 @@ from pyfr24 import FR24API
 # Initialize the client
 api = FR24API("your_api_token")
 
-# Export flight data with custom settings
+# Export flight data with enhanced features
 output_dir = api.export_flight_data(
     "39bebe6e",
-    background='osm',        # Use OpenStreetMap background
-    orientation='horizontal' # 16:9 aspect ratio (default)
+    background='esri-satellite',  # Satellite background
+    orientation='horizontal',     # 16:9 aspect ratio (default)
+    timezone='America/New_York'   # Convert to Eastern Time
 )
 
 # The output directory will contain:
@@ -77,10 +82,10 @@ output_dir = api.export_flight_data(
 Or use the command-line interface:
 
 ```bash
-# Export flight data with custom visualization
-pyfr24 export-flight --flight-id 39bebe6e \
-                     --background osm \
-                     --orientation horizontal
+# Export with enhanced features
+pyfr24 smart-export --flight DL562 --date 2025-08-02 \
+                    --background esri-satellite \
+                    --timezone "America/New_York"
 
 # Get live flights for an aircraft
 pyfr24 live-flights --registration N12345

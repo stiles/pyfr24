@@ -31,11 +31,12 @@ api = FR24API("your_api_token")
 # Get flight tracks for a specific flight ID
 tracks = api.get_flight_tracks("39bebe6e")
 
-# Export flight data
+# Export flight data with enhanced features
 output_dir = api.export_flight_data(
     "39bebe6e",
-    background='osm',        # OpenStreetMap background
-    orientation='horizontal'  # 16:9 aspect ratio
+    background='esri-satellite',  # Satellite background
+    orientation='horizontal',     # 16:9 aspect ratio
+    timezone='America/New_York'   # Convert to Eastern Time
 )
 ```
 
@@ -53,8 +54,10 @@ pyfr24 live-flights --registration N12345
 # Get flight positions within a bounding box (Los Angeles area)
 pyfr24 flight-positions --bounds "33.5,-118.8,34.5,-117.5"
 
-# Smart export
-pyfr24 smart-export --flight UA2151 --date 2025-04-22
+# Smart export with enhanced features
+pyfr24 smart-export --flight UA2151 --date 2025-04-22 \
+                    --timezone "America/New_York" \
+                    --background esri-satellite
 ```
 
 **Full CLI reference:** [https://pyfr24.readthedocs.io/en/latest/usage/cli/](https://pyfr24.readthedocs.io/en/latest/usage/cli/)
@@ -101,14 +104,17 @@ Export complete!
 
 ## Features
 
-- Flight data retrieval (live flights, historical tracks and detailed info)
-- Data export in multiple formats (CSV, GeoJSON and KML)
-- Customizable map visualizations with multiple background options
-- Speed and altitude profile charts
-- Robust error handling and logging
-- Comprehensive testing
-- Interactive CLI export by flight number and date (`smart-export` command)
-- Topline summary output (`toplines.json`)
+- **Flight data retrieval** (live flights, historical tracks and detailed info)
+- **Enhanced visualizations** with publication-ready design:
+  - Professional chart styling with clean typography and smart formatting
+  - Multiple map backgrounds (CartoDB, OpenStreetMap, ESRI satellite/topo)
+  - Timezone conversion with automatic DST handling
+  - Human-readable time labels and date formatting
+- **Data export** in multiple formats (CSV, GeoJSON and KML)
+- **Interactive CLI** export by flight number and date (`smart-export` command)
+- **Comprehensive output** including topline summaries (`toplines.json`)
+- **Robust error handling** and logging
+- **Comprehensive testing**
 
 ## Contributing
 

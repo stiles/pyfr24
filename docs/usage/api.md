@@ -99,25 +99,44 @@ tracks = api.get_flight_tracks("39bebe6e")
 output_dir = api.export_flight_data("39bebe6e")
 
 # Export with different background maps
-output_dir = api.export_flight_data("39bebe6e", background='osm')  # OpenStreetMap
-output_dir = api.export_flight_data("39bebe6e", background='stamen')  # Stamen Terrain
-output_dir = api.export_flight_data("39bebe6e", background='esri')  # ESRI World TopoMap
-# Default is CartoDB Positron (light gray)
+output_dir = api.export_flight_data("39bebe6e", background='carto-light')    # CartoDB Light (default)
+output_dir = api.export_flight_data("39bebe6e", background='carto-dark')     # CartoDB Dark
+output_dir = api.export_flight_data("39bebe6e", background='osm')            # OpenStreetMap
+output_dir = api.export_flight_data("39bebe6e", background='esri-topo')      # ESRI World TopoMap
+output_dir = api.export_flight_data("39bebe6e", background='esri-satellite') # ESRI World Imagery
 
 # Export with different orientations
 output_dir = api.export_flight_data("39bebe6e", orientation='horizontal')  # 16:9
 output_dir = api.export_flight_data("39bebe6e", orientation='vertical')    # 9:16
 output_dir = api.export_flight_data("39bebe6e", orientation='auto')       # Auto-detect
+
+# Export with timezone conversion
+output_dir = api.export_flight_data("39bebe6e", timezone='America/New_York')      # Eastern Time
+output_dir = api.export_flight_data("39bebe6e", timezone='America/Los_Angeles')   # Pacific Time
+output_dir = api.export_flight_data("39bebe6e", timezone='Europe/London')         # GMT/BST
+
+# Combined example with all enhancements
+output_dir = api.export_flight_data(
+    "39bebe6e", 
+    background='esri-satellite',
+    orientation='horizontal',
+    timezone='America/New_York',
+    flight_number='DL562',
+    origin='KSEA',
+    destination='KATL'
+)
 ```
 
 The export creates a directory containing:
-- `data.csv`: CSV of flight track points
+- `data.csv`: CSV of flight track points (with timezone conversion if specified)
 - `points.geojson`: GeoJSON of track points
 - `line.geojson`: GeoJSON LineString connecting the points
 - `track.kml`: Flight path in KML format
-- `map.png`: Map visualization of the flight path
-- `speed.png`: Line chart of speed over time
-- `altitude.png`: Line chart of altitude over time
+- `map.png`: Map visualization with enhanced backgrounds
+- `speed.png`: Professional speed chart with timezone-aware labels
+- `altitude.png`: Professional altitude chart with timezone-aware labels
+
+When timezone conversion is used, all timestamps are converted and charts display the local timezone.
 
 ## Airline and airport information
 
