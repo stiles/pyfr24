@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.1.9] - 2025-08-02
+
+## [0.1.8] - 2025-08-02
+
 ### Added
 - `--timezone` flag to `export-flight` and `smart-export` commands to convert all output timestamps to a specified time zone.
 - `departure_time_readable` and `arrival_time_readable` fields in `toplines.json` for easier-to-read timestamps.
