@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.10] - 2025-10-12
+
 ### Added
 - `--version` flag to CLI to display current package version
 
