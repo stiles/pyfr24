@@ -955,12 +955,12 @@ class FR24API:
         self.logger.info(f"Altitude chart saved to {output_file}")
 
     def get_flight_ids_by_registration(self, registration, date_from, date_to, offset=0, limit=20, max_pages=5):
-        # Get flight IDs for an aircraft registration within a date range.
-        url = f"https://fr24api.flightradar24.com/api/flight-ids"
+        # Get flight instances for a registration within a date range using the summary endpoint.
+        url = "https://fr24api.flightradar24.com/api/flight-summary/light"
         params = {
-            "registration": registration,
-            "date_from": self._validate_and_format_date(date_from),
-            "date_to": self._validate_and_format_date(date_to),
+            "registrations": registration,
+            "flight_datetime_from": self._validate_and_format_date(date_from),
+            "flight_datetime_to": self._validate_and_format_date(date_to),
             "offset": offset,
             "limit": limit
         }

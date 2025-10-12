@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+- `--version` flag to CLI to display current package version
+
+### Fixed
+- **Critical bug fix**: `flight-ids` command now works correctly
+  - Was calling non-existent `/api/flight-ids` endpoint (returned 404)
+  - Now uses `/api/flight-summary/light` with `registrations` parameter
+  - Successfully retrieves all flight instances for a given aircraft registration and date range
+- Fixed undefined `labels` argument in `smart-export` interactive selection that could cause AttributeError
+- Improved error handling for flight lookup by registration
+
 ## [0.1.9] - 2025-08-02
 
 ## [0.1.8] - 2025-08-02

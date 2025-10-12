@@ -330,7 +330,6 @@ def smart_export_flight_command(args):
                 orientation=args.orientation,
                 auto_select=sel,
                 timezone=args.timezone,
-                labels=args.labels,
             )
             selected = result.get('selected')
             output_dir = result.get('output_dir')
@@ -398,6 +397,7 @@ def create_parser():
     parser.add_argument("-l", "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                         help="Logging level")
     parser.add_argument("-f", "--log-file", help="Log file path")
+    parser.add_argument("--version", action="store_true", help="Show version and exit")
     
     # Create subparsers for different commands
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
@@ -484,6 +484,14 @@ def main():
     """Main entry point for the CLI."""
     parser = create_parser()
     args = parser.parse_args()
+    # Handle --version
+    if getattr(args, 'version', False):
+        try:
+            from . import __version__
+            print(__version__)
+        except Exception:
+            print("unknown")
+        sys.exit(0)
     
     if not args.command:
         parser.print_help()
