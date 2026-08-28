@@ -26,7 +26,5 @@ jobs:
         pip install -e .
         pip install pytest pytest-cov
     - name: Run tests
-      env:
-        FLIGHTRADAR_API_KEY: ${{ secrets.FLIGHTRADAR_API_KEY }}
       run: |
-        pytest tests/ -v 
+        pytest tests/ -v -m "not integration"

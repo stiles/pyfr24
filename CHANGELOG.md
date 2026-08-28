@@ -7,6 +7,8 @@
 - `python_requires` is now `>=3.9`. The package imports `zoneinfo` for timezone conversion, which is standard library only from 3.9, so the advertised 3.8 support never worked. The CI matrix drops 3.8 and adds 3.12 and 3.13.
 - Publishing to PyPI happens once, in the release workflow. `publish.sh` uploaded with twine and then created a GitHub release that triggered a second upload, so every Publish run failed with "400 File already exists" after the package had already gone out.
 
+- Tests that call the live API are marked `integration` and deselected in CI, so the suite no longer depends on a given flight having operated on the day it runs.
+
 ### Fixed
 - `tests/` was listed in `.gitignore`, so only the handful of files committed before that line was added were ever in the repository or run by CI. New tests were silently untracked.
 

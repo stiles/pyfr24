@@ -8,6 +8,11 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# These call the live API and assert that specific flights flew on the current
+# date, so they fail whenever those routes didn't operate. Deselected in CI with
+# -m "not integration"; run them deliberately when checking the API itself.
+pytestmark = pytest.mark.integration
+
 @pytest.fixture
 def api_token():
     """Fixture to get the API token from environment."""
