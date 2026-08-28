@@ -63,8 +63,10 @@ pyfr24 export-flight [OPTIONS]
 Options:
   -i, --flight-id TEXT       Flight ID [required]
   -o, --output-dir TEXT     Output directory path
-  --background TEXT         Background map provider (carto-light, carto-dark, osm, esri-topo, esri-satellite)
-  --orientation TEXT        Plot orientation (horizontal, vertical, auto)
+  --background TEXT         Background map (esri-light, esri-dark, esri-street, esri-topo,
+                            esri-satellite, esri-natgeo, osm, opentopo, mapbox-<style>)
+  --aspect TEXT             Aspect ratio (16:9, 3:2, 4:3, 1:1, 9:16)
+  --orientation TEXT        Legacy orientation (horizontal, vertical, auto); --aspect wins
   --timezone TEXT           Convert timestamps to specified timezone (e.g., America/New_York)
 ```
 
@@ -79,8 +81,10 @@ Options:
   --flight TEXT             Flight number or callsign [required]
   --date TEXT              Date (YYYY-MM-DD) [required]  
   -o, --output-dir TEXT    Output directory path
-  --background TEXT        Background map provider (carto-light, carto-dark, osm, esri-topo, esri-satellite)
-  --orientation TEXT       Plot orientation (horizontal, vertical, auto)
+  --background TEXT        Background map (esri-light, esri-dark, esri-street, esri-topo,
+                           esri-satellite, esri-natgeo, osm, opentopo, mapbox-<style>)
+  --aspect TEXT            Aspect ratio (16:9, 3:2, 4:3, 1:1, 9:16)
+  --orientation TEXT       Legacy orientation (horizontal, vertical, auto); --aspect wins
   --timezone TEXT          Convert timestamps to specified timezone (e.g., America/New_York)
   --auto-select TEXT       Auto-select flight (latest, earliest, or index number)
 ```
@@ -157,10 +161,10 @@ pyfr24 export-flight -i 39a84c3c \
     --timezone "America/New_York" \
     --output-dir data/flight_39a84c3c
 
-# With custom background and orientation
+# With custom background and aspect ratio
 pyfr24 export-flight -i 39a84c3c \
-    --background carto-dark \
-    --orientation vertical \
+    --background esri-dark \
+    --aspect 9:16 \
     --output-dir data/flight_39a84c3c
 ```
 

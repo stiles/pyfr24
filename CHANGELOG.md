@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+- `--aspect` flag and `aspect` argument for `16:9` (default), `3:2`, `4:3`, `1:1` and `9:16`. The saved file matches the ratio exactly, and the map extent expands to fill the frame, so output size no longer varies with the direction of the route.
+- Maps and charts are laid out as finished graphics: bold headline, dek carrying an AP-style date and tracked duration, then a source line crediting Flightradar24 and the basemap. All three can be overridden with `headline`, `dek` and `source`.
+- Basemap options `esri-light` (new default), `esri-dark`, `esri-street`, `esri-natgeo` and `opentopo`, none of which need an API key.
+- Mapbox backgrounds via `--background mapbox-<style>`, reading `MAPBOX_TOKEN` or `MAPBOX_ACCESS_TOKEN`.
+- Type follows the house style guide: CNN Sans Display where installed, falling back to Roboto, Inter and the system sans-serif.
+
+### Removed
+- The `carto-light` and `carto-dark` backgrounds. CARTO withdrew anonymous access and now serves tiles watermarked "API key required." Both keys warn and fall back to the nearest Esri layer rather than failing.
+
+### Changed
+- Moved map and chart rendering out of `client.py` into a new `pyfr24/viz.py` module. The speed and altitude charts now share one `plot_series_chart` function instead of duplicating ~150 lines each. `FR24API` methods keep their existing signatures.
+
+### Fixed
+- OpenStreetMap backgrounds rendered an "Access blocked" placeholder. Contextily identifies itself with a random hex string, which violates the OSM tile usage policy, so the tile server returned the notice image with a 200 status. Pyfr24 now sends an identifying user agent.
+- Maps ignored the requested orientation. `set_aspect('equal')` combined with a tight bounding box cropped the canvas to the data, and `reset_extent=False` let contextily widen the axes to the tile boundary, so a Miami-to-Los Angeles route came out 2.88:1 and a Bellingham-to-Los Angeles route 0.46:1.
+- Timezone label on speed and altitude charts rendered as "Time ()" for UTC data. The label now uses the requested IANA zone, falling back to the timestamp's abbreviation or UTC offset, and sits below the axis instead of overlapping the plotted line.
+- Overlapping x-axis time labels on flights of roughly 4 to 8 hours. Tick spacing is now chosen from the flight duration to target about five labels, rather than switching between fixed 30-minute and hourly steps at an 8-hour cutoff.
+- Map figures were never closed, leaking them across batch exports.
+
 ## [0.1.10] - 2025-10-12
 
 ### Added

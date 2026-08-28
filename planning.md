@@ -8,6 +8,8 @@ This document lists planned features for the `pyfr24` tool.
 
 - [ ] **Better visual outputs**
     - [ ] Export visuals to SVG format for editing in Illustrator.
+    - [ ] Mark origin and destination on the map, with labels.
+    - [ ] Break the line at ADS-B gaps instead of drawing zeros (see issues #2 and #3).
 
 ### Planned
 
@@ -43,8 +45,17 @@ This document lists planned features for the `pyfr24` tool.
     - Improve the `toplines.json` output to include human-readable date strings.
 
 - [x] **Enhanced map backgrounds**
-    - Add multiple map background options: `carto-light`, `carto-dark`, `osm`, `esri-topo`, and `esri-satellite`.
-    - Improve map titles to show flight number and route instead of just flight ID.
+    - Key-free options from Esri, OpenStreetMap and OpenTopoMap, plus Mapbox with a user token.
+    - Dropped the CARTO backgrounds once CARTO began requiring an API key.
+    - Fixed the OSM user agent, which the tile server was blocking.
+
+- [x] **Consistent framing**
+    - Selectable aspect ratios (16:9, 3:2, 4:3, 1:1, 9:16) that the saved file matches exactly.
+    - Map extent fits the frame rather than the frame fitting the data.
+
+- [x] **Production-ready graphic layout**
+    - Headline, dek and source line around every map and chart, all overridable.
+    - House typography and palette, AP-style dates, units on the top axis tick.
 
 - [x] **Professional chart design**
     - Clean headline/subhead structure with proper typography and spacing.

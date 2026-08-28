@@ -99,27 +99,29 @@ tracks = api.get_flight_tracks("39bebe6e")
 output_dir = api.export_flight_data("39bebe6e")
 
 # Export with different background maps
-output_dir = api.export_flight_data("39bebe6e", background='carto-light')    # CartoDB Light (default)
-output_dir = api.export_flight_data("39bebe6e", background='carto-dark')     # CartoDB Dark
+output_dir = api.export_flight_data("39bebe6e", background='esri-light')     # Esri light gray canvas (default)
+output_dir = api.export_flight_data("39bebe6e", background='esri-dark')      # Esri dark gray canvas
 output_dir = api.export_flight_data("39bebe6e", background='osm')            # OpenStreetMap
-output_dir = api.export_flight_data("39bebe6e", background='esri-topo')      # ESRI World TopoMap
-output_dir = api.export_flight_data("39bebe6e", background='esri-satellite') # ESRI World Imagery
+output_dir = api.export_flight_data("39bebe6e", background='esri-topo')      # Esri World TopoMap
+output_dir = api.export_flight_data("39bebe6e", background='esri-satellite') # Esri World Imagery
+output_dir = api.export_flight_data("39bebe6e", background='mapbox-light-v11')  # needs MAPBOX_TOKEN
 
-# Export with different orientations
-output_dir = api.export_flight_data("39bebe6e", orientation='horizontal')  # 16:9
-output_dir = api.export_flight_data("39bebe6e", orientation='vertical')    # 9:16
-output_dir = api.export_flight_data("39bebe6e", orientation='auto')       # Auto-detect
+# Export at different aspect ratios
+output_dir = api.export_flight_data("39bebe6e", aspect='16:9')  # default
+output_dir = api.export_flight_data("39bebe6e", aspect='3:2')
+output_dir = api.export_flight_data("39bebe6e", aspect='1:1')
+output_dir = api.export_flight_data("39bebe6e", aspect='9:16')
 
 # Export with timezone conversion
-output_dir = api.export_flight_data("39bebe6e", timezone='America/New_York')      # Eastern Time
-output_dir = api.export_flight_data("39bebe6e", timezone='America/Los_Angeles')   # Pacific Time
+output_dir = api.export_flight_data("39bebe6e", timezone='America/New_York')      # Eastern time
+output_dir = api.export_flight_data("39bebe6e", timezone='America/Los_Angeles')   # Pacific time
 output_dir = api.export_flight_data("39bebe6e", timezone='Europe/London')         # GMT/BST
 
 # Combined example with all enhancements
 output_dir = api.export_flight_data(
     "39bebe6e", 
     background='esri-satellite',
-    orientation='horizontal',
+    aspect='3:2',
     timezone='America/New_York',
     flight_number='DL562',
     origin='KSEA',

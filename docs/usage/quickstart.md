@@ -46,7 +46,7 @@ tracks = api.get_flight_tracks("39bebe6e")
 output_dir = api.export_flight_data(
     "39bebe6e",
     background='osm',
-    orientation='horizontal'
+    aspect='16:9'
 )
 print(f"Data exported to: {output_dir}")
 ```

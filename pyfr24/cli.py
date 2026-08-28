@@ -11,6 +11,13 @@ import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from . import FR24API, configure_logging
+from .viz import ASPECT_RATIOS, BASEMAPS, DEFAULT_BASEMAP
+
+ASPECT_CHOICES = list(ASPECT_RATIOS)
+BACKGROUND_HELP = (
+    f"Map background: {', '.join(BASEMAPS)} (default: {DEFAULT_BASEMAP}), "
+    "or 'mapbox-<style>' with MAPBOX_TOKEN set"
+)
 
 def setup_logging(args):
     """Configure logging based on command-line arguments."""
@@ -173,6 +180,7 @@ def export_flight_command(args):
             output_dir=args.output_dir,
             background=args.background,
             orientation=args.orientation,
+            aspect=args.aspect,
             timezone=args.timezone
         )
         print(f"Flight data exported to directory: {output_dir}")
@@ -290,6 +298,7 @@ def smart_export_flight_command(args):
             output_dir=args.output_dir,
             background=args.background,
             orientation=args.orientation,
+            aspect=args.aspect,
             auto_select=args.auto_select,
             timezone=args.timezone,
         )
@@ -328,6 +337,7 @@ def smart_export_flight_command(args):
                 output_dir=args.output_dir,
                 background=args.background,
                 orientation=args.orientation,
+                aspect=args.aspect,
                 auto_select=sel,
                 timezone=args.timezone,
             )
@@ -427,12 +437,9 @@ def create_parser():
     export_flight_parser = subparsers.add_parser("export-flight", help="Export flight data to CSV, GeoJSON, KML and plot")
     export_flight_parser.add_argument("-i", "--flight-id", required=True, help="Flight ID")
     export_flight_parser.add_argument("-o", "--output-dir", help="Output directory path")
-    export_flight_parser.add_argument("--background", 
-                                      choices=['carto-light', 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'], 
-                                      default='carto-light', 
-                                      help="Map background. 'carto-light' (default), 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'")
-    export_flight_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], default='horizontal', help="Map orientation (16:9, 9:16, or auto-detect)")
-
+    export_flight_parser.add_argument("--background", default=DEFAULT_BASEMAP, help=BACKGROUND_HELP)
+    export_flight_parser.add_argument("--aspect", choices=ASPECT_CHOICES, help="Aspect ratio for the map and charts (default: 16:9)")
+    export_flight_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], help="Legacy map orientation; --aspect takes precedence")
     export_flight_parser.add_argument("--timezone", help="Convert UTC timestamps to a specific timezone (e.g., 'America/New_York')")
     export_flight_parser.set_defaults(func=export_flight_command)
     
@@ -468,12 +475,9 @@ def create_parser():
     smart_export_parser.add_argument("-F", "--flight", required=True, help="Flight number or callsign")
     smart_export_parser.add_argument("-d", "--date", required=True, help="Date (YYYY-MM-DD)")
     smart_export_parser.add_argument("-o", "--output-dir", help="Output directory path")
-    smart_export_parser.add_argument("--background", 
-                                     choices=['carto-light', 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'], 
-                                     default='carto-light', 
-                                     help="Map background. 'carto-light' (default), 'carto-dark', 'osm', 'esri-topo', 'esri-satellite'")
-    smart_export_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], default='horizontal', help="Map orientation (16:9, 9:16, or auto-detect)")
-
+    smart_export_parser.add_argument("--background", default=DEFAULT_BASEMAP, help=BACKGROUND_HELP)
+    smart_export_parser.add_argument("--aspect", choices=ASPECT_CHOICES, help="Aspect ratio for the map and charts (default: 16:9)")
+    smart_export_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], help="Legacy map orientation; --aspect takes precedence")
     smart_export_parser.add_argument("--auto-select", help="Auto-select: 'latest', 'earliest', or index (for scripting)")
     smart_export_parser.add_argument("--timezone", help="Convert UTC timestamps to a specific timezone (e.g., 'America/New_York')")
     smart_export_parser.set_defaults(func=smart_export_flight_command)

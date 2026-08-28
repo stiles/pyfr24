@@ -4,12 +4,6 @@ import json
 import time
 import logging
 import requests
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import matplotlib.font_manager as fm
-import geopandas as gpd
-import contextily as ctx
-from shapely.geometry import Point, LineString
 import pandas as pd
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -18,33 +12,13 @@ from .exceptions import (
     FR24NotFoundError, FR24ServerError, FR24ClientError, 
     FR24ValidationError, FR24ConnectionError
 )
-import matplotlib.dates as mdates
+from .viz import DEFAULT_BASEMAP, aspect_key, plot_altitude_chart, plot_flight_map, plot_speed_chart
 import datetime
 import re
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # Configure logger
 logger = logging.getLogger(__name__)
-
-# Configure default font
-def _configure_font():
-    """Configure the default font for plots."""
-    # Try to find Roboto in system fonts
-    roboto_font = None
-    for font in fm.findSystemFonts():
-        if 'Roboto' in font:
-            roboto_font = font
-            break
-    
-    # If Roboto not found, use the default sans-serif font
-    if roboto_font:
-        plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = ['Roboto']
-    else:
-        logger.debug("Using system default sans-serif font")
-
-# Configure font when module is imported
-_configure_font()
 
 def _create_kml_from_tracks(tracks, flight_id):
     """
@@ -385,132 +359,40 @@ class FR24API:
         response = self._make_request("get", url, headers=self.session.headers, params=params)
         return response.json()
 
-    def enhanced_plot_flight(self, sorted_tracks, flight_id, fig_filename=None, orientation='horizontal', pad_factor=0.2, zoom=None, background='carto', flight_number=None, origin=None, destination=None):
+    def enhanced_plot_flight(self, sorted_tracks, flight_id, fig_filename=None, orientation=None, aspect=None, pad_factor=0.12, zoom=None, background=DEFAULT_BASEMAP, flight_number=None, origin=None, destination=None, headline=None, dek=None, source=None):
         """
-        Enhanced plot of flight data using geopandas and contextily.
-        Converts the track list into a GeoDataFrame, adds a basemap and plots points and a connecting line.
-        
+        Plot the flight path over a basemap and save it to fig_filename.
+
         Args:
             sorted_tracks: List of track points
             flight_id: Flight identifier
             fig_filename: Output filename for the plot
-            orientation: Plot orientation ('horizontal', 'vertical', or 'auto'). 
-                       'horizontal' uses 16:9 aspect ratio (default)
-                       'vertical' uses 9:16 aspect ratio
-                       'auto' will choose based on the flight path direction
+            orientation: Legacy 'horizontal', 'vertical' or 'auto'; aspect wins
+            aspect: Aspect ratio for the finished graphic ('16:9', '3:2', '4:3', '1:1', '9:16')
             pad_factor: Padding around the flight path
             zoom: Zoom level for the basemap (if None, will be automatically determined)
-            background: Background map provider ('carto', 'osm', 'stamen', 'esri')
+            background: Basemap key ('esri-light', 'esri-satellite', 'osm', 'mapbox-<style>', ...)
+            headline, dek, source: Copy overrides for the graphic
         """
-        self.logger.debug(f"Starting enhanced_plot_flight with {len(sorted_tracks)} track points")
-        
-        # Convert track data to DataFrame then to GeoDataFrame
-        df = pd.DataFrame(sorted_tracks)
-        if df.empty:
-            self.logger.warning("No data available to plot.")
-            return
-            
-        self.logger.debug(f"DataFrame created with columns: {df.columns.tolist()}")
-        
-        # Create geometry column from lon, lat and set CRS to EPSG:4326.
-        try:
-            gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")
-            self.logger.debug("GeoDataFrame created successfully")
-        except Exception as e:
-            self.logger.error(f"Error creating GeoDataFrame: {e}")
-            return
-            
-        # Reproject to Web Mercator.
-        try:
-            gdf_plot = gdf.to_crs(epsg=3857)
-            self.logger.debug("Data reprojected to Web Mercator")
-        except Exception as e:
-            self.logger.error(f"Error reprojecting data: {e}")
-            return
+        return plot_flight_map(
+            sorted_tracks,
+            flight_id,
+            fig_filename=fig_filename,
+            orientation=orientation,
+            aspect=aspect,
+            pad_factor=pad_factor,
+            zoom=zoom,
+            background=background,
+            flight_number=flight_number,
+            origin=origin,
+            destination=destination,
+            headline=headline,
+            dek=dek,
+            source=source,
+            log=self.logger,
+        )
 
-        # Determine orientation if 'auto'
-        if orientation == 'auto':
-            # Get the bounding box
-            xmin, ymin, xmax, ymax = gdf_plot.total_bounds
-            width = xmax - xmin
-            height = ymax - ymin
-            # Choose orientation based on which dimension is larger
-            orientation = 'horizontal' if width > height else 'vertical'
-            self.logger.debug(f"Auto-detected orientation: {orientation}")
-
-        # Set figure size based on orientation
-        if orientation == 'vertical':
-            figsize = (9, 16)
-        else:  # horizontal
-            figsize = (16, 9)
-        
-        # Create figure and axis with appropriate aspect ratio
-        fig, ax = plt.subplots(figsize=figsize)
-        
-        # Plot only the connecting line in orange (#f18851) without any points
-        self.logger.debug("Plotting connecting line")
-        ax.plot(gdf_plot.geometry.x, gdf_plot.geometry.y, color="#f18851", linewidth=2, solid_capstyle='round', solid_joinstyle='round')
-        
-        # Expand plot bounds for context.
-        try:
-            xmin, ymin, xmax, ymax = gdf_plot.total_bounds
-            self.logger.debug(f"Plot bounds: xmin={xmin}, ymin={ymin}, xmax={xmax}, ymax={ymax}")
-            x_pad = (xmax - xmin) * pad_factor
-            y_pad = (ymax - ymin) * pad_factor
-            extent = [xmin - x_pad, ymin - y_pad, xmax + x_pad, ymax + y_pad]
-            ax.set_xlim(extent[0], extent[2])
-            ax.set_ylim(extent[1], extent[3])
-            
-            # Force aspect ratio to match figure size
-            ax.set_aspect('equal')
-        except Exception as e:
-            self.logger.error(f"Error setting plot bounds: {e}")
-            return
-        
-        # Add a basemap based on the selected provider
-        try:
-            # If zoom is None, don't pass it to add_basemap
-            basemap_kwargs = {'reset_extent': False}
-            if zoom is not None:
-                basemap_kwargs['zoom'] = zoom
-                
-            # Map user-friendly names to contextily providers
-            source_map = {
-                'carto-light': ctx.providers.CartoDB.Positron,
-                'carto-dark': ctx.providers.CartoDB.DarkMatter,
-                'osm': ctx.providers.OpenStreetMap.Mapnik,
-                'esri-topo': ctx.providers.Esri.WorldTopoMap,
-                'esri-satellite': ctx.providers.Esri.WorldImagery
-            }
-            # Get the source, defaulting to 'carto-light' if not found
-            source = source_map.get(background.lower(), ctx.providers.CartoDB.Positron)
-            ctx.add_basemap(ax, source=source, **basemap_kwargs)
-            self.logger.debug(f"Basemap added with provider: {background}")
-
-
-        except Exception as e:
-            self.logger.error(f"Error adding basemap: {e}")
-            return
-        
-        ax.set_axis_off()
-        plt.tight_layout()
-        # Create a more descriptive title
-        if flight_number and origin and destination:
-            title = f"Flight: {flight_number}  Departure: {origin}  Destination: {destination}"
-        else:
-            title = f"Flight: {flight_id}"
-        plt.title(title)
-        
-        if fig_filename:
-            try:
-                os.makedirs(os.path.dirname(fig_filename), exist_ok=True)
-                plt.savefig(fig_filename, dpi=300, bbox_inches="tight", pad_inches=0)
-                self.logger.info(f"Plot saved as {fig_filename}")
-            except Exception as e:
-                self.logger.error(f"Error saving plot: {e}")
-                return
-
-    def export_flight_data(self, flight_id, output_dir=None, background='carto', orientation='horizontal', timezone=None, flight_number=None, origin=None, destination=None):
+    def export_flight_data(self, flight_id, output_dir=None, background=DEFAULT_BASEMAP, orientation=None, aspect=None, timezone=None, flight_number=None, origin=None, destination=None):
         """
         Export flight track data to CSV, GeoJSON (points and line), KML and visualizations.
         Creates a directory named data/flight_id (or specified output_dir) and saves:
@@ -525,11 +407,10 @@ class FR24API:
         Args:
             flight_id: Flight identifier
             output_dir: Output directory path
-            background: Background map provider ('carto', 'osm', 'stamen', 'esri')
-            orientation: Plot orientation ('horizontal', 'vertical', or 'auto'). 
-                       'horizontal' uses 16:9 aspect ratio (default)
-                       'vertical' uses 9:16 aspect ratio
-                       'auto' will choose based on the flight path direction
+            background: Basemap key ('esri-light', 'esri-satellite', 'osm', 'mapbox-<style>', ...)
+            orientation: Legacy 'horizontal', 'vertical' or 'auto'; aspect wins
+            aspect: Aspect ratio for every graphic ('16:9', '3:2', '4:3', '1:1', '9:16')
+            timezone: IANA zone to convert timestamps to (e.g. 'America/New_York')
         """
         # Fetch flight tracks.
         self.logger.info(f"Fetching flight tracks for flight ID: {flight_id}")
@@ -554,6 +435,7 @@ class FR24API:
         sorted_tracks = sorted(tracks, key=lambda x: x.get("timestamp", ""))
 
         # Convert timestamps if a timezone is provided.
+        applied_timezone = None
         if timezone:
             try:
                 target_tz = ZoneInfo(timezone)
@@ -566,6 +448,7 @@ class FR24API:
                         
                         local_dt = dt_obj.astimezone(target_tz)
                         track['timestamp'] = local_dt.isoformat()
+                applied_timezone = timezone
             except ZoneInfoNotFoundError:
                 self.logger.warning(f"Timezone '{timezone}' not found. Skipping conversion.")
             except Exception as e:
@@ -640,319 +523,36 @@ class FR24API:
 
         # Create map visualization
         map_file = os.path.join(output_dir, "map.png")
-        self.enhanced_plot_flight(sorted_tracks, flight_id, fig_filename=map_file, background=background, orientation=orientation, flight_number=flight_number, origin=origin, destination=destination)
+        self.enhanced_plot_flight(sorted_tracks, flight_id, fig_filename=map_file, background=background, orientation=orientation, aspect=aspect, flight_number=flight_number, origin=origin, destination=destination)
         
+        # Charts have no 'auto' equivalent, so a legacy orientation resolves to a key here.
+        chart_aspect = aspect_key(aspect, orientation)
+
         # Create speed chart
         speed_file = os.path.join(output_dir, "speed.png")
-        self._plot_speed_chart(sorted_tracks, flight_id, speed_file, flight_number=flight_number, origin=origin, destination=destination)
+        self._plot_speed_chart(sorted_tracks, flight_id, speed_file, flight_number=flight_number, origin=origin, destination=destination, timezone=applied_timezone, aspect=chart_aspect)
         
         # Create altitude chart
         altitude_file = os.path.join(output_dir, "altitude.png")
-        self._plot_altitude_chart(sorted_tracks, flight_id, altitude_file, flight_number=flight_number, origin=origin, destination=destination)
+        self._plot_altitude_chart(sorted_tracks, flight_id, altitude_file, flight_number=flight_number, origin=origin, destination=destination, timezone=applied_timezone, aspect=chart_aspect)
 
         return output_dir
 
-    def _plot_speed_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None):
-        """Create a line chart of speed over time."""
-        # Extract timestamps and speeds
-        timestamps = []
-        speeds = []
-        self.logger.debug(f"Processing {len(tracks)} track points for speed chart")
-        
-        for i, track in enumerate(tracks):
-            try:
-                self.logger.debug(f"Track point {i}: {track}")
-                
-                # Skip if timestamp is missing or None
-                if 'timestamp' not in track or track['timestamp'] is None:
-                    self.logger.debug(f"Skipping track {i}: missing or None timestamp")
-                    continue
-                    
-                timestamp = pd.to_datetime(track['timestamp'])
-                
-                # Handle missing or None speed values
-                if 'gspeed' not in track or track['gspeed'] is None:
-                    speed = 0  # Assume zero speed when data is missing
-                    self.logger.debug(f"Track {i}: using zero speed for missing data")
-                else:
-                    speed = float(track['gspeed'])
-                
-                # Skip only if speed is negative or unreasonably high
-                if speed < 0 or speed > 1000:  # 1000 knots is a reasonable upper limit
-                    self.logger.debug(f"Skipping track {i}: invalid speed value {speed}")
-                    continue
-                    
-                timestamps.append(timestamp)
-                speeds.append(speed)
-                self.logger.debug(f"Added track point {i}: timestamp={timestamp}, speed={speed}")
-            except (ValueError, TypeError) as e:
-                self.logger.debug(f"Skipping track {i}: error processing data - {e}")
-                continue
+    def _plot_speed_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None, timezone=None, aspect=None):
+        """Create a line chart of ground speed over time."""
+        plot_speed_chart(
+            tracks, flight_id, output_file,
+            flight_number=flight_number, origin=origin, destination=destination,
+            timezone=timezone, aspect=aspect, log=self.logger,
+        )
 
-        if not timestamps:
-            self.logger.warning("No valid speed data available for plotting")
-            return
-
-        self.logger.debug(f"Creating speed chart with {len(timestamps)} points")
-        
-        # Use a clean, professional style
-        plt.style.use('default')
-        
-        # Create the plot with larger figure size
-        fig, ax = plt.subplots(figsize=(16, 9))
-        
-        # Plot the speed data with a clean orange line
-        ax.plot(timestamps, speeds, color='#f18851', linewidth=2, alpha=0.9)
-        
-        # Create title with human-readable date
-        if timestamps:
-            # Get the date from the first timestamp for the title
-            first_timestamp = timestamps[0]
-            if hasattr(first_timestamp, 'strftime'):
-                flight_date = first_timestamp.strftime('%B %-d, %Y')
-            else:
-                flight_date = str(first_timestamp)[:10]
-        else:
-            flight_date = ""
-            
-        # Create headline and subhead structure
-        if flight_number and origin and destination and flight_date:
-            headline = f"Ground speed profile for {flight_number} from {origin} to {destination} on {flight_date}"
-        elif flight_number and origin and destination:
-            headline = f"Ground speed profile for {flight_number} from {origin} to {destination}"
-        else:
-            headline = f"Ground speed profile for flight {flight_id}"
-            
-        subhead = "Ground speed in knots"
-        
-        # Set main title (headline) - bold, larger font, positioned very close to Y-axis
-        ax.text(-0.04, 1.15, headline, transform=ax.transAxes, fontsize=16, 
-                weight='bold', color='#333333', ha='left', va='top',
-                fontfamily='sans-serif')
-        
-        # Set subtitle - italic, smaller font, positioned very close to Y-axis
-        ax.text(-0.04, 1.09, subhead, transform=ax.transAxes, fontsize=12,
-                style='italic', color='#666666', ha='left', va='top',
-                fontfamily='sans-serif')
-        
-        # Remove the default title
-        ax.set_title("")
-        
-        # Remove axis labels - title explains what we're showing
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        
-        # Clean, minimal grid
-        ax.grid(True, linestyle='-', alpha=0.15, color='#cccccc')
-        
-        # Format x-axis with clean time format using timezone from data
-        tz = None
-        if timestamps and hasattr(timestamps[0], 'tz') and timestamps[0].tz is not None:
-            tz = timestamps[0].tz
-        
-        # Smart time interval selection based on flight duration
-        if timestamps:
-            duration_hours = (timestamps[-1] - timestamps[0]).total_seconds() / 3600
-            if duration_hours <= 8:  # Short to medium flights: 30-minute intervals
-                ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0, 30], tz=tz))
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%-I:%M %p', tz=tz))
-            else:  # Long flights: 1-hour intervals
-                ax.xaxis.set_major_locator(mdates.HourLocator(interval=1, tz=tz))
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%-I %p', tz=tz))
-        else:
-            # Fallback to hourly
-            ax.xaxis.set_major_locator(mdates.HourLocator(interval=1, tz=tz))
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%-I %p', tz=tz))
-        
-        # Clean x-axis labels
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha='center', fontsize=12, color='#666666')
-        
-        # Add timezone indicator to x-axis
-        if tz:
-            tz_name = str(tz).replace('UTC', '').replace('+', '').replace('-', '-')
-            if 'America/New_York' in str(tz) or '-04:00' in tz_name or '-05:00' in tz_name:
-                tz_label = "Eastern Time"
-            elif 'America/Chicago' in str(tz) or '-05:00' in tz_name or '-06:00' in tz_name:
-                tz_label = "Central Time"
-            elif 'America/Denver' in str(tz) or '-06:00' in tz_name or '-07:00' in tz_name:
-                tz_label = "Mountain Time"
-            elif 'America/Los_Angeles' in str(tz) or '-07:00' in tz_name or '-08:00' in tz_name:
-                tz_label = "Pacific Time"
-            else:
-                tz_label = f"Time ({tz_name})"
-            
-            ax.text(0.98, 0.02, tz_label, transform=ax.transAxes, fontsize=10,
-                    color='#666666', ha='right', va='bottom', style='italic',
-                    fontfamily='sans-serif')
-        
-        # Format y-axis labels cleanly (units are in the title)
-        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{int(x)}'))
-        plt.setp(ax.yaxis.get_majorticklabels(), fontsize=12, color='#666666')
-        
-        # Clean up the appearance
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_color('#cccccc')
-        ax.spines['bottom'].set_color('#cccccc')
-        
-        # Adjust layout to accommodate custom titles positioned higher above chart area
-        plt.subplots_adjust(top=0.78)
-        
-        # Save the plot with higher DPI
-        plt.savefig(output_file, dpi=300, bbox_inches="tight")
-        plt.close()
-        self.logger.info(f"Speed chart saved to {output_file}")
-
-    def _plot_altitude_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None):
+    def _plot_altitude_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None, timezone=None, aspect=None):
         """Create a line chart of altitude over time."""
-        # Extract timestamps and altitudes
-        timestamps = []
-        altitudes = []
-        self.logger.debug(f"Processing {len(tracks)} track points for altitude chart")
-        
-        for i, track in enumerate(tracks):
-            try:
-                self.logger.debug(f"Track point {i}: {track}")
-                
-                # Skip if timestamp is missing or None
-                if 'timestamp' not in track or track['timestamp'] is None:
-                    self.logger.debug(f"Skipping track {i}: missing or None timestamp")
-                    continue
-                    
-                timestamp = pd.to_datetime(track['timestamp'])
-                
-                # Handle missing or None altitude values
-                if 'alt' not in track or track['alt'] is None:
-                    alt = 0  # Assume ground level when data is missing
-                    self.logger.debug(f"Track {i}: using zero altitude for missing data")
-                else:
-                    alt = float(track['alt'])
-                
-                # Skip only if altitude is negative or unreasonably high
-                if alt < 0 or alt > 50000:  # 50,000 feet is a reasonable upper limit
-                    self.logger.debug(f"Skipping track {i}: invalid altitude value {alt}")
-                    continue
-                    
-                timestamps.append(timestamp)
-                altitudes.append(alt)
-                self.logger.debug(f"Added track point {i}: timestamp={timestamp}, altitude={alt}")
-            except (ValueError, TypeError) as e:
-                self.logger.debug(f"Skipping track {i}: error processing data - {e}")
-                continue
-
-        if not timestamps:
-            self.logger.warning("No valid altitude data available for plotting")
-            return
-
-        self.logger.debug(f"Creating altitude chart with {len(timestamps)} points")
-        
-        # Use a clean, professional style
-        plt.style.use('default')
-        
-        # Create the plot with larger figure size
-        fig, ax = plt.subplots(figsize=(16, 9))
-        
-        # Plot the altitude data with a clean orange line
-        ax.plot(timestamps, altitudes, color='#f18851', linewidth=2, alpha=0.9)
-        
-        # Create title with human-readable date
-        if timestamps:
-            # Get the date from the first timestamp for the title
-            first_timestamp = timestamps[0]
-            if hasattr(first_timestamp, 'strftime'):
-                flight_date = first_timestamp.strftime('%B %-d, %Y')
-            else:
-                flight_date = str(first_timestamp)[:10]
-        else:
-            flight_date = ""
-            
-        # Create headline and subhead structure
-        if flight_number and origin and destination and flight_date:
-            headline = f"Altitude profile for {flight_number} from {origin} to {destination} on {flight_date}"
-        elif flight_number and origin and destination:
-            headline = f"Altitude profile for {flight_number} from {origin} to {destination}"
-        else:
-            headline = f"Altitude profile for flight {flight_id}"
-            
-        subhead = "Altitude in feet"
-        
-        # Set main title (headline) - bold, larger font, positioned very close to Y-axis
-        ax.text(-0.04, 1.15, headline, transform=ax.transAxes, fontsize=16, 
-                weight='bold', color='#333333', ha='left', va='top',
-                fontfamily='sans-serif')
-        
-        # Set subtitle - italic, smaller font, positioned very close to Y-axis
-        ax.text(-0.04, 1.09, subhead, transform=ax.transAxes, fontsize=12,
-                style='italic', color='#666666', ha='left', va='top',
-                fontfamily='sans-serif')
-        
-        # Remove the default title
-        ax.set_title("")
-        
-        # Remove axis labels - title explains what we're showing
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        
-        # Clean, minimal grid
-        ax.grid(True, linestyle='-', alpha=0.15, color='#cccccc')
-        
-        # Format x-axis with clean time format using timezone from data
-        tz = None
-        if timestamps and hasattr(timestamps[0], 'tz') and timestamps[0].tz is not None:
-            tz = timestamps[0].tz
-        
-        # Smart time interval selection based on flight duration
-        if timestamps:
-            duration_hours = (timestamps[-1] - timestamps[0]).total_seconds() / 3600
-            if duration_hours <= 8:  # Short to medium flights: 30-minute intervals
-                ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0, 30], tz=tz))
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%-I:%M %p', tz=tz))
-            else:  # Long flights: 1-hour intervals
-                ax.xaxis.set_major_locator(mdates.HourLocator(interval=1, tz=tz))
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%-I %p', tz=tz))
-        else:
-            # Fallback to hourly
-            ax.xaxis.set_major_locator(mdates.HourLocator(interval=1, tz=tz))
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%-I %p', tz=tz))
-        
-        # Clean x-axis labels
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha='center', fontsize=12, color='#666666')
-        
-        # Add timezone indicator to x-axis
-        if tz:
-            tz_name = str(tz).replace('UTC', '').replace('+', '').replace('-', '-')
-            if 'America/New_York' in str(tz) or '-04:00' in tz_name or '-05:00' in tz_name:
-                tz_label = "Eastern Time"
-            elif 'America/Chicago' in str(tz) or '-05:00' in tz_name or '-06:00' in tz_name:
-                tz_label = "Central Time"
-            elif 'America/Denver' in str(tz) or '-06:00' in tz_name or '-07:00' in tz_name:
-                tz_label = "Mountain Time"
-            elif 'America/Los_Angeles' in str(tz) or '-07:00' in tz_name or '-08:00' in tz_name:
-                tz_label = "Pacific Time"
-            else:
-                tz_label = f"Time ({tz_name})"
-            
-            ax.text(0.98, 0.02, tz_label, transform=ax.transAxes, fontsize=10,
-                    color='#666666', ha='right', va='bottom', style='italic',
-                    fontfamily='sans-serif')
-        
-        # Format y-axis labels with comma separators (units are in the title)
-        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{int(x):,}'))
-        plt.setp(ax.yaxis.get_majorticklabels(), fontsize=12, color='#666666')
-        
-        # Clean up the appearance
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_color('#cccccc')
-        ax.spines['bottom'].set_color('#cccccc')
-        
-        # Adjust layout to accommodate custom titles positioned higher above chart area
-        plt.subplots_adjust(top=0.78)
-        
-        # Save the plot with higher DPI
-        plt.savefig(output_file, dpi=300, bbox_inches="tight")
-        plt.close()
-        self.logger.info(f"Altitude chart saved to {output_file}")
+        plot_altitude_chart(
+            tracks, flight_id, output_file,
+            flight_number=flight_number, origin=origin, destination=destination,
+            timezone=timezone, aspect=aspect, log=self.logger,
+        )
 
     def get_flight_ids_by_registration(self, registration, date_from, date_to, offset=0, limit=20, max_pages=5):
         # Get flight instances for a registration within a date range using the summary endpoint.
@@ -972,8 +572,9 @@ class FR24API:
         flight_number,
         date,
         output_dir=None,
-        background='carto',
-        orientation='horizontal',
+        background=DEFAULT_BASEMAP,
+        orientation=None,
+        aspect=None,
         auto_select=None,  # 'latest', 'earliest', or integer index
         summary_mode='full',  # or 'light',
         timezone=None,
@@ -1026,7 +627,7 @@ class FR24API:
                 safe_dest = dest.replace('/', '_')
                 output_dir = f"data/{safe_flight}_{date_str}_{safe_orig}-{safe_dest}_{flight_id}"
             # 4. Export
-            export_dir = self.export_flight_data(flight_id, output_dir=output_dir, background=background, orientation=orientation, timezone=timezone, flight_number=flight_number, origin=orig, destination=dest)
+            export_dir = self.export_flight_data(flight_id, output_dir=output_dir, background=background, orientation=orientation, aspect=aspect, timezone=timezone, flight_number=flight_number, origin=orig, destination=dest)
             return {'output_dir': export_dir, 'selected': selected, 'options': data}
         else:
             # Multiple matches, no auto_select: return options for caller to prompt

@@ -42,11 +42,11 @@ from pyfr24 import FR24API
 
 api = FR24API("your_api_token")
 
-# Export with custom background and orientation
+# Export with custom background and aspect ratio
 output_dir = api.export_flight_data(
     "39bebe6e",
     background='osm',        # OpenStreetMap
-    orientation='vertical',  # 9:16 aspect ratio
+    aspect='9:16',           # Vertical, for mobile and social
     output_dir="custom_export"
 )
 

@@ -78,20 +78,22 @@ Export flight data with various options:
 pyfr24 export-flight -i 39a84c3c -o data/flight_39a84c3c
 
 # With different background maps
-pyfr24 export-flight -i 39a84c3c --background carto-light    # CartoDB Light (default)
-pyfr24 export-flight -i 39a84c3c --background carto-dark     # CartoDB Dark
+pyfr24 export-flight -i 39a84c3c --background esri-light     # Esri light gray canvas (default)
+pyfr24 export-flight -i 39a84c3c --background esri-dark      # Esri dark gray canvas
 pyfr24 export-flight -i 39a84c3c --background osm            # OpenStreetMap
-pyfr24 export-flight -i 39a84c3c --background esri-topo      # ESRI World TopoMap
-pyfr24 export-flight -i 39a84c3c --background esri-satellite # ESRI World Imagery
+pyfr24 export-flight -i 39a84c3c --background esri-topo      # Esri World TopoMap
+pyfr24 export-flight -i 39a84c3c --background esri-satellite # Esri World Imagery
+MAPBOX_TOKEN="pk.your_token" pyfr24 export-flight -i 39a84c3c --background mapbox-light-v11
 
-# With different orientations
-pyfr24 export-flight -i 39a84c3c --orientation horizontal  # 16:9 aspect ratio
-pyfr24 export-flight -i 39a84c3c --orientation vertical    # 9:16 aspect ratio
-pyfr24 export-flight -i 39a84c3c --orientation auto       # Auto-detect
+# At different aspect ratios
+pyfr24 export-flight -i 39a84c3c --aspect 16:9  # default
+pyfr24 export-flight -i 39a84c3c --aspect 3:2
+pyfr24 export-flight -i 39a84c3c --aspect 1:1
+pyfr24 export-flight -i 39a84c3c --aspect 9:16
 
 # With timezone conversion
-pyfr24 export-flight -i 39a84c3c --timezone "America/New_York"      # Eastern Time
-pyfr24 export-flight -i 39a84c3c --timezone "America/Los_Angeles"   # Pacific Time
+pyfr24 export-flight -i 39a84c3c --timezone "America/New_York"      # Eastern time
+pyfr24 export-flight -i 39a84c3c --timezone "America/Los_Angeles"   # Pacific time
 pyfr24 export-flight -i 39a84c3c --timezone "Europe/London"         # GMT/BST
 ```
 
@@ -157,8 +159,9 @@ pyfr24 smart-export --flight UA2151 --date 2025-04-22
 - `--flight` (required): Flight number or callsign
 - `--date` (required): Date (YYYY-MM-DD)
 - `--output-dir`: Custom output directory (optional)
-- `--background`: Map background (carto-light, carto-dark, osm, esri-topo, esri-satellite)
-- `--orientation`: Chart orientation (horizontal, vertical, auto)
+- `--background`: Map background (esri-light, esri-dark, esri-street, esri-topo, esri-satellite, esri-natgeo, osm, opentopo, or mapbox-&lt;style&gt;)
+- `--aspect`: Aspect ratio for the map and charts (16:9, 3:2, 4:3, 1:1, 9:16)
+- `--orientation`: Legacy orientation (horizontal, vertical, auto); `--aspect` wins
 - `--timezone`: Convert timestamps to specified timezone (e.g., America/New_York)
 - `--auto-select`: For scripting (e.g., `latest`, `earliest`, or index)
 

@@ -65,7 +65,7 @@ api = FR24API("your_api_token")
 output_dir = api.export_flight_data(
     "39bebe6e",
     background='esri-satellite',  # Satellite background
-    orientation='horizontal',     # 16:9 aspect ratio (default)
+    aspect='16:9',                # Fixed 16:9 output (default)
     timezone='America/New_York'   # Convert to Eastern Time
 )
 

@@ -1,86 +1,57 @@
-# Map Visualization Features
+# Map visualization
 
-Pyfr24 provides powerful flight path visualization capabilities with customizable options.
+Pyfr24 draws the flight path over a tiled basemap and frames it to a fixed
+aspect ratio, so exports drop straight into a graphic.
 
-## Background Map Options
+## Background maps
 
-Choose from multiple background map providers:
-
-- **CartoDB Positron** (default): Clean, light gray basemap
-- **OpenStreetMap**: Detailed street and terrain data
-- **Stamen Terrain**: Beautiful terrain visualization
-- **ESRI World TopoMap**: Topographic mapping
-
-Example usage:
-```python
-# Using different background maps
-api.export_flight_data("39bebe6e", background='osm')    # OpenStreetMap
-api.export_flight_data("39bebe6e", background='stamen') # Stamen Terrain
-api.export_flight_data("39bebe6e", background='esri')   # ESRI World TopoMap
-# Default is CartoDB Positron (light gray)
-```
-
-## Map Orientation
-
-Three orientation options to best display your flight path:
-
-- **Horizontal** (16:9): Default, ideal for east-west flights
-- **Vertical** (9:16): Better for north-south flights
-- **Auto**: Automatically selects based on flight path direction
-
-Example usage:
-```python
-# Using different orientations
-api.export_flight_data("39bebe6e", orientation='horizontal') # 16:9
-api.export_flight_data("39bebe6e", orientation='vertical')   # 9:16
-api.export_flight_data("39bebe6e", orientation='auto')      # Auto-detect
-```
-
-## Visual Style
-
-The flight path visualization includes:
-
-- Orange flight path line (#f18851) for high visibility
-- Clean, modern styling
-- High-quality output (300 DPI)
-- Automatic zoom level adjustment
-- Padding around the flight path for context
-- Equal aspect ratio for accurate distance representation
-
-## Additional Visualizations
-
-Along with the map, the export includes:
-
-### Speed Chart
-- Ground speed over time
-- Clear time axis with formatted timestamps
-- Reference lines for common speed thresholds
-- Orange line color matching the map visualization
-
-### Altitude Chart
-- Altitude profile over time
-- Reference lines at key altitudes (ground, 10,000ft, 30,000ft)
-- Matching style with speed chart
-- Clear altitude scale in feet
-
-## Combining Options
-
-You can combine different options for the perfect visualization:
+The default is `esri-light`, Esri's light gray canvas, which stays quiet enough
+that the route carries the map. See
+[enhanced visualizations](enhanced-visualizations.md) for the full list.
 
 ```python
-output_dir = api.export_flight_data(
-    "39bebe6e",
-    background='osm',       # Use OpenStreetMap background
-    orientation='vertical'  # 9:16 aspect ratio for north-south flights
-)
+api.export_flight_data("39bebe6e", background='esri-light')      # default
+api.export_flight_data("39bebe6e", background='osm')             # OpenStreetMap
+api.export_flight_data("39bebe6e", background='esri-satellite')  # Esri World Imagery
+api.export_flight_data("39bebe6e", background='mapbox-dark-v11')  # needs MAPBOX_TOKEN
 ```
 
-## Output Files
+None of the Esri, OpenStreetMap or OpenTopoMap options need a key. The CARTO
+backgrounds were removed once CARTO began requiring one; passing `carto-light`
+or `carto-dark` warns and falls back to Esri.
 
-The visualization export creates:
+## Aspect ratio
 
-- `map.png`: Flight path visualization
-- `speed.png`: Speed profile chart
-- `altitude.png`: Altitude profile chart
+Pass `aspect` to fix the shape of the finished graphic: `16:9` (default), `3:2`,
+`4:3`, `1:1` or `9:16`. The map extent grows to fill the frame, so the output
+size doesn't change with the direction of the route.
 
-All images are generated at 300 DPI for high-quality output. 
+```python
+api.export_flight_data("39bebe6e", aspect='3:2')
+api.export_flight_data("39bebe6e", aspect='9:16')
+```
+
+The older `orientation` argument still works: `horizontal` is `16:9`, `vertical`
+is `9:16`, and `auto` picks between them from the shape of the track. `aspect`
+wins when both are passed.
+
+## Visual style
+
+- Orange route line (`#F18851`) over a muted basemap
+- Headline, dek and source line laid out around the map inside the requested ratio
+- Type in CNN Sans Display where installed, falling back to Roboto, Inter, then the system sans-serif
+- Basemap credit carried in the source line, so the tile provider is attributed
+- Equal aspect in Web Mercator, so distances aren't distorted
+- Saved at 200 DPI by default, adjustable with `dpi`
+
+## Additional visualizations
+
+Each export also writes a ground speed chart and an altitude chart, styled to
+match the map and rendered at the same aspect ratio. Both label their units on
+the top axis tick and name the timezone in the source line.
+
+## Output files
+
+- `map.png`: Flight path over the basemap
+- `speed.png`: Ground speed profile
+- `altitude.png`: Altitude profile

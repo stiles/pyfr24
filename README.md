@@ -35,7 +35,7 @@ tracks = api.get_flight_tracks("39bebe6e")
 output_dir = api.export_flight_data(
     "39bebe6e",
     background='esri-satellite',  # Satellite background
-    orientation='horizontal',     # 16:9 aspect ratio
+    aspect='16:9',                # Fixed 16:9 output
     timezone='America/New_York'   # Convert to Eastern Time
 )
 ```
@@ -57,7 +57,8 @@ pyfr24 flight-positions --bounds "33.5,-118.8,34.5,-117.5"
 # Smart export with enhanced features
 pyfr24 smart-export --flight UA2151 --date 2025-04-22 \
                     --timezone "America/New_York" \
-                    --background esri-satellite
+                    --background esri-satellite \
+                    --aspect 3:2
 ```
 
 **Full CLI reference:** [https://pyfr24.readthedocs.io/en/latest/usage/cli/](https://pyfr24.readthedocs.io/en/latest/usage/cli/)
@@ -105,11 +106,12 @@ Export complete!
 ## Features
 
 - **Flight data retrieval** (live flights, historical tracks and detailed info)
-- **Enhanced visualizations** with publication-ready design:
-  - Professional chart styling with clean typography and smart formatting
-  - Multiple map backgrounds (CartoDB, OpenStreetMap, ESRI satellite/topo)
+- **Publication-ready visualizations**:
+  - Headline, dek and source line laid out around every map and chart
+  - Fixed aspect ratios (16:9, 3:2, 4:3, 1:1, 9:16) that the saved file matches exactly
+  - Key-free map backgrounds from Esri, OpenStreetMap and OpenTopoMap, plus Mapbox with your own token
   - Timezone conversion with automatic DST handling
-  - Human-readable time labels and date formatting
+  - AP-style dates and time axes that don't collide
 - **Data export** in multiple formats (CSV, GeoJSON and KML)
 - **Interactive CLI** export by flight number and date (`smart-export` command)
 - **Comprehensive output** including topline summaries (`toplines.json`)

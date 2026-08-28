@@ -25,6 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+PYFR24_SUGGESTIONS.md
 
 # macOS
 .DS_Store

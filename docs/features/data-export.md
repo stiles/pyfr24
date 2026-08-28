@@ -89,7 +89,7 @@ output_dir = api.export_flight_data(
     "39bebe6e",
     output_dir="custom/path",
     background='osm',
-    orientation='auto'
+    aspect='3:2'
 )
 ```
 
