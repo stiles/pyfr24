@@ -12,25 +12,14 @@ echo "========================================="
 # --- 1. Version Management ---
 echo "--- Version Management ---"
 
-# Extract current version from setup.py
-CURRENT_VERSION=$(grep "version=" setup.py | sed 's/.*version=//' | sed "s/[',]//g" | xargs)
+# The version is defined once, in pyfr24/__init__.py, and setup.py parses it
+# from there. Keeping a second literal in setup.py is what shipped 0.2.0
+# reporting itself as 1.0.0.
+CURRENT_VERSION=$(grep "^__version__" pyfr24/__init__.py | sed 's/.*= *//' | tr -d "\"'" | xargs)
 
 if [ -z "$CURRENT_VERSION" ]; then
-    echo "Error: Could not find version in setup.py"
+    echo "Error: Could not find __version__ in pyfr24/__init__.py"
     exit 1
-fi
-
-# setup.py and __init__.py drifted apart in 0.2.0: the __init__ bump matched on
-# the old version, found nothing and silently left a stale number in the wheel.
-if [ -f "pyfr24/__init__.py" ]; then
-    INIT_VERSION=$(grep "^__version__" pyfr24/__init__.py | sed 's/.*= *//' | tr -d "\"'" | xargs)
-    if [ "$INIT_VERSION" != "$CURRENT_VERSION" ]; then
-        echo "Error: version mismatch between files."
-        echo "  setup.py:           $CURRENT_VERSION"
-        echo "  pyfr24/__init__.py: $INIT_VERSION"
-        echo "Reconcile them before publishing."
-        exit 1
-    fi
 fi
 
 echo "Current version: $CURRENT_VERSION"
@@ -114,14 +103,9 @@ echo "--- Pre-flight Checklist ---"
 if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     echo "Updating version in files..."
     
-    # Update setup.py
-    sed -i.bak "s/version=['\"]$CURRENT_VERSION['\"]/version=\"$NEW_VERSION\"/" setup.py
-    
     # Rewrite the line outright rather than matching on the old version, so a
-    # file that has already drifted still lands on the right number.
-    if [ -f "pyfr24/__init__.py" ]; then
-        sed -i.bak "s/^__version__ = .*/__version__ = \"$NEW_VERSION\"/" pyfr24/__init__.py
-    fi
+    # file that has somehow drifted still lands on the right number.
+    sed -i.bak "s/^__version__ = .*/__version__ = \"$NEW_VERSION\"/" pyfr24/__init__.py
     
     # Update CHANGELOG.md - move [Unreleased] to new version
     if [ -f "CHANGELOG.md" ]; then
@@ -134,7 +118,7 @@ if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     fi
     
     # Remove backup files
-    rm -f setup.py.bak pyfr24/__init__.py.bak CHANGELOG.md.bak
+    rm -f pyfr24/__init__.py.bak CHANGELOG.md.bak
     
     # An empty section here means the GitHub release notes would come out empty.
     if ! awk '/^## \['"$NEW_VERSION"'\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md | grep -q '[^[:space:]]'; then
@@ -172,8 +156,7 @@ echo "Ready to publish pyfr24 version $NEW_VERSION"
 echo "This will:"
 echo "  - Commit and push changes to GitHub"
 echo "  - Create a git tag v$NEW_VERSION"
-echo "  - Build and upload to PyPI"
-echo "  - Create a GitHub release"
+echo "  - Create a GitHub release, which triggers the PyPI upload"
 echo "  - Trigger ReadTheDocs rebuild"
 echo
 
@@ -206,7 +189,6 @@ echo "✅ Tests passed."
 echo "--- Checking Tools ---"
 command -v python3 >/dev/null 2>&1 || { echo >&2 "Error: python3 is not installed. Aborting."; exit 1; }
 python3 -m pip show build >/dev/null 2>&1 || { echo >&2 "Error: 'build' is not installed. Run 'pip install build'. Aborting."; exit 1; }
-python3 -m pip show twine >/dev/null 2>&1 || { echo >&2 "Error: 'twine' is not installed. Run 'pip install twine'. Aborting."; exit 1; }
 HAS_GH=$(command -v gh >/dev/null 2>&1 && echo "true" || echo "false")
 echo "✅ Required tools found."
 
@@ -215,10 +197,7 @@ echo "--- Git Operations ---"
 
 # Commit version changes if any
 if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
-    git add setup.py CHANGELOG.md
-    if [ -f "pyfr24/__init__.py" ]; then
-        git add pyfr24/__init__.py
-    fi
+    git add pyfr24/__init__.py CHANGELOG.md
     git commit -m "Bump version to $NEW_VERSION"
     echo "✅ Version bump committed."
 fi
@@ -244,58 +223,12 @@ python3 -m build
 echo "✅ Build complete. Files created:"
 ls -la dist/
 
-# --- 9. Publish to PyPI ---
-echo "--- Publishing to PyPI ---"
-echo
-echo "Where would you like to publish?"
-select choice in "TestPyPI (for testing)" "PyPI (Official - Live)" "Skip publishing"; do
-    case $choice in
-        "TestPyPI"* )
-            echo "Uploading to TestPyPI..."
-            if [ -z "$PYPI_TEST" ]; then
-                echo "Error: PYPI_TEST environment variable is not set."
-                echo "Please set it with your TestPyPI API token."
-                exit 1
-            fi
-            python3 -m twine upload --repository-url https://test.pypi.org/legacy/ -u __token__ -p "$PYPI_TEST" dist/*
-            echo
-            echo "✅ Successfully published to TestPyPI!"
-            echo "View at: https://test.pypi.org/project/pyfr24/$NEW_VERSION/"
-            echo "Install with: pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple pyfr24==$NEW_VERSION"
-            break
-            ;;
-        "PyPI"* )
-            read -p "⚠️  Publishing to OFFICIAL PyPI. This is permanent. Continue? (y/n) " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-                if [ -z "$PYPI" ]; then
-                    echo "Error: PYPI environment variable is not set."
-                    echo "Please set it with your PyPI API token."
-                    exit 1
-                fi
-                echo "Uploading to PyPI..."
-                python3 -m twine upload -u __token__ -p "$PYPI" dist/*
-                echo
-                echo "✅ Successfully published to PyPI!"
-                echo "Package is live at: https://pypi.org/project/pyfr24/$NEW_VERSION/"
-                echo "Install with: pip install pyfr24==$NEW_VERSION"
-            else
-                echo "PyPI publishing cancelled."
-            fi
-            break
-            ;;
-        "Skip"* )
-            echo "Skipping PyPI publishing."
-            break
-            ;;
-        * )
-            echo "Invalid option. Please choose 1, 2, or 3."
-            ;;
-    esac
-done
-
-# --- 10. GitHub Release ---
+# --- 9. GitHub Release ---
+# Publishing to PyPI belongs to .github/workflows/publish.yml, which runs on
+# release. Uploading from here as well left every Publish run failing with
+# "400 File already exists" after the package had already gone out.
 echo "--- GitHub Release ---"
+echo "Creating the release triggers the PyPI upload. Skip it and nothing publishes."
 read -p "Create a GitHub release for v$NEW_VERSION? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -339,13 +272,10 @@ echo "========================================="
 echo "Version: $NEW_VERSION"
 echo "Tag: $TAG"
 echo "GitHub: https://github.com/stiles/pyfr24/releases/tag/$TAG"
-if [[ $choice == "PyPI"* ]]; then
-    echo "PyPI: https://pypi.org/project/pyfr24/$NEW_VERSION/"
-fi
 echo "Docs: https://pyfr24.readthedocs.io/"
 echo
 echo "Next steps:"
+echo "- Watch the PyPI upload: gh run watch \$(gh run list --workflow='Publish to PyPI' --limit 1 --json databaseId -q '.[0].databaseId')"
+echo "- Once it's green: pip install --no-cache-dir --upgrade pyfr24"
 echo "- Monitor ReadTheDocs build status"
-echo "- Test installation: pip install pyfr24==$NEW_VERSION"
-echo "- Announce the release!"
 echo "========================================="

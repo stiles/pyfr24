@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+- The version is defined once, in `pyfr24/__init__.py`, and `setup.py` parses it from there rather than carrying a second copy. Two hand-maintained literals is what let 0.2.0 ship reporting itself as 1.0.0. `publish.sh` now bumps a single file, and a test asserts the packaged version matches `pyfr24.__version__`.
+- `python_requires` is now `>=3.9`. The package imports `zoneinfo` for timezone conversion, which is standard library only from 3.9, so the advertised 3.8 support never worked. The CI matrix drops 3.8 and adds 3.12 and 3.13.
+- Publishing to PyPI happens once, in the release workflow. `publish.sh` uploaded with twine and then created a GitHub release that triggered a second upload, so every Publish run failed with "400 File already exists" after the package had already gone out.
+
+### Fixed
+- `tests/` was listed in `.gitignore`, so only the handful of files committed before that line was added were ever in the repository or run by CI. New tests were silently untracked.
+
 ## [0.2.1] - 2026-08-28
 
 ### Changed

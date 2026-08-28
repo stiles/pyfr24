@@ -30,7 +30,6 @@ PYFR24_SUGGESTIONS.md
 # macOS
 .DS_Store
 *.DS_Store
-tests/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -188,6 +187,9 @@ cython_debug/
 # Project specific
 data/
 *.log
+
+# Ad-hoc API scripts, not part of the test suite. See tests/manual/README.md.
+tests/manual/
 
 # Release documentation
 RELEASES.md
