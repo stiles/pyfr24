@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-28
+
+## [1.0.0] - 2026-08-28
+
 ### Added
 - `--aspect` flag and `aspect` argument for `16:9` (default), `3:2`, `4:3`, `1:1` and `9:16`. The saved file matches the ratio exactly, and the map extent expands to fill the frame, so output size no longer varies with the direction of the route.
 - Maps and charts are laid out as finished graphics: bold headline, dek carrying an AP-style date and tracked duration, then a source line crediting Flightradar24 and the basemap. All three can be overridden with `headline`, `dek` and `source`.
