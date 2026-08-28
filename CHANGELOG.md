@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-28
+
 ### Changed
 - `osm` is now the default basemap, replacing `esri-light`. OpenStreetMap labels cities and states at the zooms a cross-country route sits at, where the Esri gray canvas drops them, so a map reads without extra annotation. `esri-light` remains available for a quieter frame.
 - OpenStreetMap is credited as "OpenStreetMap contributors" in the source line, the attribution its license asks for.
