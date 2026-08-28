@@ -6,7 +6,7 @@ from .exceptions import (
 )
 from .logging import configure_logging
 
-__version__ = "1.0.0"
+__version__ = "0.2.0"
 
 __all__ = [
     'FR24API',

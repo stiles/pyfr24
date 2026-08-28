@@ -371,7 +371,7 @@ class FR24API:
             aspect: Aspect ratio for the finished graphic ('16:9', '3:2', '4:3', '1:1', '9:16')
             pad_factor: Padding around the flight path
             zoom: Zoom level for the basemap (if None, will be automatically determined)
-            background: Basemap key ('esri-light', 'esri-satellite', 'osm', 'mapbox-<style>', ...)
+            background: Basemap key ('osm' (default), 'esri-light', 'esri-satellite', 'mapbox-<style>', ...)
             headline, dek, source: Copy overrides for the graphic
         """
         return plot_flight_map(
@@ -407,7 +407,7 @@ class FR24API:
         Args:
             flight_id: Flight identifier
             output_dir: Output directory path
-            background: Basemap key ('esri-light', 'esri-satellite', 'osm', 'mapbox-<style>', ...)
+            background: Basemap key ('osm' (default), 'esri-light', 'esri-satellite', 'mapbox-<style>', ...)
             orientation: Legacy 'horizontal', 'vertical' or 'auto'; aspect wins
             aspect: Aspect ratio for every graphic ('16:9', '3:2', '4:3', '1:1', '9:16')
             timezone: IANA zone to convert timestamps to (e.g. 'America/New_York')

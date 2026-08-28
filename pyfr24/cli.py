@@ -11,12 +11,14 @@ import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from . import FR24API, configure_logging
-from .viz import ASPECT_RATIOS, BASEMAPS, DEFAULT_BASEMAP
+from .viz import ASPECT_RATIOS, BASEMAPS, DEFAULT_BASEMAP, MAPBOX_STYLE_ALIASES
 
 ASPECT_CHOICES = list(ASPECT_RATIOS)
 BACKGROUND_HELP = (
-    f"Map background: {', '.join(BASEMAPS)} (default: {DEFAULT_BASEMAP}), "
-    "or 'mapbox-<style>' with MAPBOX_TOKEN set"
+    f"Map background: {', '.join(BASEMAPS)} (default: {DEFAULT_BASEMAP}). "
+    f"With MAPBOX_TOKEN set, also mapbox-<style> where style is one of "
+    f"{', '.join(MAPBOX_STYLE_ALIASES)}, a versioned ID like 'light-v11', "
+    "or your own 'username/styleid'"
 )
 
 def setup_logging(args):

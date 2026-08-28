@@ -47,25 +47,48 @@ None of these need an API key:
 
 | Background | Description | Best for |
 |------------|-------------|----------|
-| `esri-light` | Esri light gray canvas (default) | General purpose; the route carries the map |
+| `osm` | OpenStreetMap standard (default) | General purpose; labels cities and states at national zooms |
+| `esri-light` | Esri light gray canvas | A quieter frame where the route carries the map |
 | `esri-dark` | Esri dark gray canvas | High-contrast presentations |
 | `esri-street` | Esri World Street Map | Street-level context |
 | `esri-topo` | Esri World Topographic | Terrain and topographic features |
 | `esri-satellite` | Esri World Imagery | Satellite photography |
 | `esri-natgeo` | Esri National Geographic | Reference-style physical geography |
-| `osm` | OpenStreetMap standard | Detailed street-level information |
 | `opentopo` | OpenTopoMap | Hillshaded terrain |
 
 Mapbox styles are available with your own token:
 
 ```bash
 export MAPBOX_TOKEN="pk.your_token"
-pyfr24 smart-export --flight DL562 --date 2025-08-02 --background mapbox-light-v11
+pyfr24 smart-export --flight DL562 --date 2025-08-02 --background mapbox-light
 ```
 
-The style name after `mapbox-` is any Mapbox style ID, defaulting to the
-`mapbox/` account (so `mapbox-dark-v11` and `mapbox-satellite-streets-v12` both
-work). Pass a full `owner/style` to use your own.
+Mapbox style IDs carry a version suffix, so the plain name you'd expect,
+`light`, is really `light-v11`. Pyfr24 accepts the short name and fills in the
+current version:
+
+| Short name | Style ID |
+|------------|----------|
+| `mapbox-light` | `mapbox/light-v11` |
+| `mapbox-dark` | `mapbox/dark-v11` |
+| `mapbox-streets` | `mapbox/streets-v12` |
+| `mapbox-outdoors` | `mapbox/outdoors-v12` |
+| `mapbox-satellite` | `mapbox/satellite-v9` |
+| `mapbox-satellite-streets` | `mapbox/satellite-streets-v12` |
+| `mapbox-navigation-day` | `mapbox/navigation-day-v1` |
+| `mapbox-navigation-night` | `mapbox/navigation-night-v1` |
+
+A versioned ID passes through untouched, so `mapbox-light-v11` still works and
+lets you pin a version Mapbox has since superseded. To use a style of your own,
+give the full `owner/styleid`, as in `mapbox-yourname/cl9xk2p00000`.
+
+### When a basemap fails
+
+Tile servers only fail when the tiles are requested, so a mistyped style, a
+revoked token or an outage surfaces mid-render. Rather than saving a map with
+nothing behind the route, pyfr24 logs the error, retries with the default
+OpenStreetMap layer and rewrites the source line to credit the basemap you
+actually got.
 
 ### CARTO backgrounds were removed
 

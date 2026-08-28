@@ -99,12 +99,12 @@ tracks = api.get_flight_tracks("39bebe6e")
 output_dir = api.export_flight_data("39bebe6e")
 
 # Export with different background maps
-output_dir = api.export_flight_data("39bebe6e", background='esri-light')     # Esri light gray canvas (default)
-output_dir = api.export_flight_data("39bebe6e", background='esri-dark')      # Esri dark gray canvas
-output_dir = api.export_flight_data("39bebe6e", background='osm')            # OpenStreetMap
+output_dir = api.export_flight_data("39bebe6e", background='osm')           # OpenStreetMap (default)
+output_dir = api.export_flight_data("39bebe6e", background='esri-light')    # Esri light gray canvas
+output_dir = api.export_flight_data("39bebe6e", background='esri-dark')     # Esri dark gray canvas
 output_dir = api.export_flight_data("39bebe6e", background='esri-topo')      # Esri World TopoMap
 output_dir = api.export_flight_data("39bebe6e", background='esri-satellite') # Esri World Imagery
-output_dir = api.export_flight_data("39bebe6e", background='mapbox-light-v11')  # needs MAPBOX_TOKEN
+output_dir = api.export_flight_data("39bebe6e", background='mapbox-light')   # needs MAPBOX_TOKEN
 
 # Export at different aspect ratios
 output_dir = api.export_flight_data("39bebe6e", aspect='16:9')  # default

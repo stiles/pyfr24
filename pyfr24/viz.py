@@ -10,6 +10,7 @@ written in pixels, and the saved image keeps the requested aspect ratio exactly.
 
 import logging
 import os
+import re
 
 import contextily as ctx
 import contextily.tile
@@ -77,13 +78,13 @@ ESRI_DARK_CANVAS = xyzservices.TileProvider(
 
 # Keys map to a provider and the short credit used in the source line.
 BASEMAPS = {
+    'osm': ('OpenStreetMap.Mapnik', 'OpenStreetMap contributors'),
     'esri-light': ('Esri.WorldGrayCanvas', 'Esri'),
     'esri-dark': (ESRI_DARK_CANVAS, 'Esri'),
     'esri-street': ('Esri.WorldStreetMap', 'Esri'),
     'esri-topo': ('Esri.WorldTopoMap', 'Esri'),
     'esri-satellite': ('Esri.WorldImagery', 'Esri'),
     'esri-natgeo': ('Esri.NatGeoWorldMap', 'Esri'),
-    'osm': ('OpenStreetMap.Mapnik', 'OpenStreetMap'),
     'opentopo': ('OpenTopoMap', 'OpenTopoMap'),
 }
 
@@ -91,8 +92,23 @@ BASEMAPS = {
 # "API key required" images.
 RETIRED_BASEMAPS = {'carto': 'esri-light', 'carto-light': 'esri-light', 'carto-dark': 'esri-dark'}
 
-DEFAULT_BASEMAP = 'esri-light'
-DEFAULT_MAPBOX_STYLE = 'mapbox/light-v11'
+# OSM labels cities and states at national zooms, which the Esri gray canvas
+# drops, so a cross-country route stays readable without extra annotation.
+DEFAULT_BASEMAP = 'osm'
+
+# Mapbox style IDs carry a version suffix, so 'mapbox-light' has to become
+# 'light-v11' rather than 'light', which 404s.
+MAPBOX_STYLE_ALIASES = {
+    'light': 'light-v11',
+    'dark': 'dark-v11',
+    'streets': 'streets-v12',
+    'outdoors': 'outdoors-v12',
+    'satellite': 'satellite-v9',
+    'satellite-streets': 'satellite-streets-v12',
+    'navigation-day': 'navigation-day-v1',
+    'navigation-night': 'navigation-night-v1',
+}
+DEFAULT_MAPBOX_STYLE = 'light'
 
 NAMED_TIMEZONES = {
     'America/New_York': 'Eastern time',
@@ -273,10 +289,59 @@ def _mapbox_provider(key):
 
     style = key[len('mapbox-'):] if key.startswith('mapbox-') else ''
     style = style or DEFAULT_MAPBOX_STYLE
+
+    # A slash means a custom style ('username/styleid'), which passes through.
     if '/' not in style:
+        if style in MAPBOX_STYLE_ALIASES:
+            style = MAPBOX_STYLE_ALIASES[style]
+        elif not re.search(r'-v\d+$', style):
+            logger.warning(
+                f"Mapbox style '{style}' is not a known alias ({', '.join(MAPBOX_STYLE_ALIASES)}) "
+                "and carries no version suffix; requesting it as given."
+            )
         style = f"mapbox/{style}"
 
     return xyzservices.TileProvider({**ctx.providers.MapBox, 'id': style, 'accessToken': token})
+
+
+def _add_basemap(ax, provider, credit, zoom, log):
+    """Draw the basemap, retrying with the default when the tiles fail.
+
+    Tile servers fail at request time, not when the provider is built, so a bad
+    style ID or a revoked token only surfaces here. Returns the credit for the
+    basemap actually drawn, or None when the map is left bare.
+    """
+    # reset_extent must stay True: when False, contextily widens the axes to
+    # the tile boundary and the fitted aspect ratio is lost.
+    kwargs = {'reset_extent': True, 'attribution': False}
+    if zoom is not None:
+        kwargs['zoom'] = zoom
+
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+
+    try:
+        ctx.add_basemap(ax, source=provider, **kwargs)
+        return credit
+    except Exception as e:
+        log.error(f"Could not load the {credit} basemap: {e}")
+
+    fallback, fallback_credit = resolve_basemap(DEFAULT_BASEMAP)
+    if provider is fallback:
+        return None
+
+    log.warning(f"Falling back to the {fallback_credit} basemap.")
+    # A failed attempt can leave the axes rescaled.
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+
+    try:
+        ctx.add_basemap(ax, source=fallback, **kwargs)
+        return fallback_credit
+    except Exception as e:
+        log.error(f"The {fallback_credit} basemap failed too; drawing the route on its own: {e}")
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        return None
 
 
 def _figure(ratio):
@@ -290,7 +355,9 @@ def _figure(ratio):
 def _draw_chrome(fig, width, height, headline, dek, source):
     """Draw headline, dek and source line; return the free vertical band.
 
-    Returns (top, bottom) in points, measured from the bottom of the figure.
+    Returns (top, bottom, source_text): the band in points measured from the
+    bottom of the figure, plus the source artist so callers can correct the
+    basemap credit once the tiles have actually loaded.
     """
     top = height - PAD
 
@@ -308,12 +375,13 @@ def _draw_chrome(fig, width, height, headline, dek, source):
     top -= GAP_DEK_TO_PLOT
 
     bottom = PAD
+    source_text = None
     if source:
-        fig.text(PAD / width, bottom / height, source, ha='left', va='bottom',
-                 fontsize=SIZE_SOURCE, color=COLOR_MUTED)
+        source_text = fig.text(PAD / width, bottom / height, source, ha='left', va='bottom',
+                               fontsize=SIZE_SOURCE, color=COLOR_MUTED)
         bottom += SIZE_SOURCE * LINE_HEIGHT + GAP_PLOT_TO_SOURCE
 
-    return top, bottom
+    return top, bottom, source_text
 
 
 def _add_axes(fig, width, height, top, bottom, left=PAD, right=PAD):
@@ -489,7 +557,7 @@ def plot_series_chart(
             source = f"{source}. Times in {tz_label}."
 
     fig, width, height = _figure(resolve_aspect(aspect))
-    top, bottom = _draw_chrome(fig, width, height, headline, dek, source)
+    top, bottom, _ = _draw_chrome(fig, width, height, headline, dek, source)
 
     # Room for the x tick labels between the plot and the source line.
     bottom += SIZE_AXIS * 1.8
@@ -604,11 +672,12 @@ def plot_flight_map(sorted_tracks, flight_id, fig_filename=None, orientation=Non
         timestamps = [pd.to_datetime(t['timestamp']) for t in sorted_tracks if t.get('timestamp')]
         dek = _default_dek(timestamps)
 
+    custom_source = source is not None
     if source is None:
         source = f"Source: Flightradar24; basemap by {credit}"
 
     fig, width, height = _figure(ratio)
-    top, bottom = _draw_chrome(fig, width, height, headline, dek, source)
+    top, bottom, source_text = _draw_chrome(fig, width, height, headline, dek, source)
     ax = _add_axes(fig, width, height, top, bottom)
 
     ax.plot(gdf_plot.geometry.x, gdf_plot.geometry.y, color=COLOR_ROUTE, linewidth=2,
@@ -622,16 +691,15 @@ def plot_flight_map(sorted_tracks, flight_id, fig_filename=None, orientation=Non
     ax.set_ylim(ymin, ymax)
     ax.set_aspect('equal')
 
-    try:
-        # reset_extent must stay True: when False, contextily widens the axes to
-        # the tile boundary and the fitted aspect ratio is lost.
-        basemap_kwargs = {'reset_extent': True, 'attribution': False}
-        if zoom is not None:
-            basemap_kwargs['zoom'] = zoom
-        ctx.add_basemap(ax, source=provider, **basemap_kwargs)
-        log.debug(f"Basemap added: {background}")
-    except Exception as e:
-        log.error(f"Error adding basemap: {e}")
+    drawn_credit = _add_basemap(ax, provider, credit, zoom, log)
+    log.debug(f"Basemap drawn: {drawn_credit or 'none'}")
+
+    # Never credit a basemap that isn't on the finished graphic.
+    if not custom_source and source_text is not None and drawn_credit != credit:
+        source_text.set_text(
+            f"Source: Flightradar24; basemap by {drawn_credit}" if drawn_credit
+            else "Source: Flightradar24"
+        )
 
     ax.set_axis_off()
 

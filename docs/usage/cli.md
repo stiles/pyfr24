@@ -78,12 +78,12 @@ Export flight data with various options:
 pyfr24 export-flight -i 39a84c3c -o data/flight_39a84c3c
 
 # With different background maps
-pyfr24 export-flight -i 39a84c3c --background esri-light     # Esri light gray canvas (default)
+pyfr24 export-flight -i 39a84c3c --background osm            # OpenStreetMap (default)
+pyfr24 export-flight -i 39a84c3c --background esri-light     # Esri light gray canvas
 pyfr24 export-flight -i 39a84c3c --background esri-dark      # Esri dark gray canvas
-pyfr24 export-flight -i 39a84c3c --background osm            # OpenStreetMap
 pyfr24 export-flight -i 39a84c3c --background esri-topo      # Esri World TopoMap
 pyfr24 export-flight -i 39a84c3c --background esri-satellite # Esri World Imagery
-MAPBOX_TOKEN="pk.your_token" pyfr24 export-flight -i 39a84c3c --background mapbox-light-v11
+MAPBOX_TOKEN="pk.your_token" pyfr24 export-flight -i 39a84c3c --background mapbox-light
 
 # At different aspect ratios
 pyfr24 export-flight -i 39a84c3c --aspect 16:9  # default
@@ -159,7 +159,7 @@ pyfr24 smart-export --flight UA2151 --date 2025-04-22
 - `--flight` (required): Flight number or callsign
 - `--date` (required): Date (YYYY-MM-DD)
 - `--output-dir`: Custom output directory (optional)
-- `--background`: Map background (esri-light, esri-dark, esri-street, esri-topo, esri-satellite, esri-natgeo, osm, opentopo, or mapbox-&lt;style&gt;)
+- `--background`: Map background (osm (default), esri-light, esri-dark, esri-street, esri-topo, esri-satellite, esri-natgeo, opentopo, or mapbox-&lt;style&gt;)
 - `--aspect`: Aspect ratio for the map and charts (16:9, 3:2, 4:3, 1:1, 9:16)
 - `--orientation`: Legacy orientation (horizontal, vertical, auto); `--aspect` wins
 - `--timezone`: Convert timestamps to specified timezone (e.g., America/New_York)

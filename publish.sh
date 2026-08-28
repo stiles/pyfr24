@@ -20,6 +20,19 @@ if [ -z "$CURRENT_VERSION" ]; then
     exit 1
 fi
 
+# setup.py and __init__.py drifted apart in 0.2.0: the __init__ bump matched on
+# the old version, found nothing and silently left a stale number in the wheel.
+if [ -f "pyfr24/__init__.py" ]; then
+    INIT_VERSION=$(grep "^__version__" pyfr24/__init__.py | sed 's/.*= *//' | tr -d "\"'" | xargs)
+    if [ "$INIT_VERSION" != "$CURRENT_VERSION" ]; then
+        echo "Error: version mismatch between files."
+        echo "  setup.py:           $CURRENT_VERSION"
+        echo "  pyfr24/__init__.py: $INIT_VERSION"
+        echo "Reconcile them before publishing."
+        exit 1
+    fi
+fi
+
 echo "Current version: $CURRENT_VERSION"
 echo
 echo "What type of version bump do you want?"
@@ -74,6 +87,11 @@ done
 
 echo "Publishing version: $NEW_VERSION"
 
+if [ "$NEW_VERSION" != "$CURRENT_VERSION" ] && git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
+    echo "Error: tag v$NEW_VERSION already exists. Pick another version."
+    exit 1
+fi
+
 # --- 2. Git Status Check ---
 echo "--- Git Status Check ---"
 if ! git diff-index --quiet HEAD --; then
@@ -99,19 +117,30 @@ if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     # Update setup.py
     sed -i.bak "s/version=['\"]$CURRENT_VERSION['\"]/version=\"$NEW_VERSION\"/" setup.py
     
-    # Update __init__.py if it exists
+    # Rewrite the line outright rather than matching on the old version, so a
+    # file that has already drifted still lands on the right number.
     if [ -f "pyfr24/__init__.py" ]; then
-        sed -i.bak "s/__version__ = ['\"]$CURRENT_VERSION['\"]/__version__ = \"$NEW_VERSION\"/" pyfr24/__init__.py
+        sed -i.bak "s/^__version__ = .*/__version__ = \"$NEW_VERSION\"/" pyfr24/__init__.py
     fi
     
     # Update CHANGELOG.md - move [Unreleased] to new version
     if [ -f "CHANGELOG.md" ]; then
-        TODAY=$(date +%Y-%m-%d)
-        sed -i.bak "s/## \[Unreleased\]/## [Unreleased]\n\n## [$NEW_VERSION] - $TODAY/" CHANGELOG.md
+        if grep -q "^## \[$NEW_VERSION\]" CHANGELOG.md; then
+            echo "Note: CHANGELOG.md already has a [$NEW_VERSION] heading; leaving it as is."
+        else
+            TODAY=$(date +%Y-%m-%d)
+            sed -i.bak "s/## \[Unreleased\]/## [Unreleased]\n\n## [$NEW_VERSION] - $TODAY/" CHANGELOG.md
+        fi
     fi
     
     # Remove backup files
     rm -f setup.py.bak pyfr24/__init__.py.bak CHANGELOG.md.bak
+    
+    # An empty section here means the GitHub release notes would come out empty.
+    if ! awk '/^## \['"$NEW_VERSION"'\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md | grep -q '[^[:space:]]'; then
+        echo "Warning: no release notes found under [$NEW_VERSION] in CHANGELOG.md."
+        echo "The GitHub release would fall back to a generic description."
+    fi
     
     echo "✅ Version files updated to $NEW_VERSION"
 fi

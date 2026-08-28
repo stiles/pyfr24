@@ -5,15 +5,16 @@ aspect ratio, so exports drop straight into a graphic.
 
 ## Background maps
 
-The default is `esri-light`, Esri's light gray canvas, which stays quiet enough
-that the route carries the map. See
+The default is `osm`, which labels cities and states at the zooms a
+cross-country route sits at, so the map reads without extra annotation. Use
+`esri-light` for a quieter canvas that lets the route carry the map. See
 [enhanced visualizations](enhanced-visualizations.md) for the full list.
 
 ```python
-api.export_flight_data("39bebe6e", background='esri-light')      # default
-api.export_flight_data("39bebe6e", background='osm')             # OpenStreetMap
+api.export_flight_data("39bebe6e", background='osm')             # default
+api.export_flight_data("39bebe6e", background='esri-light')      # Esri light gray canvas
 api.export_flight_data("39bebe6e", background='esri-satellite')  # Esri World Imagery
-api.export_flight_data("39bebe6e", background='mapbox-dark-v11')  # needs MAPBOX_TOKEN
+api.export_flight_data("39bebe6e", background='mapbox-dark')     # needs MAPBOX_TOKEN
 ```
 
 None of the Esri, OpenStreetMap or OpenTopoMap options need a key. The CARTO

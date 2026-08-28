@@ -8,7 +8,7 @@ Welcome to the Pyfr24 documentation. This Python package provides an interface t
 - **Data export**: Export flight data in multiple formats (CSV, GeoJSON and KML)
 - **Enhanced visualizations**: Publication-ready charts and maps with:
     - Professional chart design with clean typography and smart formatting
-    - Multiple map backgrounds (CartoDB, OpenStreetMap, ESRI satellite/topo)
+    - Multiple map backgrounds (OpenStreetMap, Esri satellite/topo, Mapbox)
     - Timezone conversion with automatic DST handling
     - Human-readable time labels and date formatting
     - Orientation options (16:9 horizontal, 9:16 vertical or auto-detect)

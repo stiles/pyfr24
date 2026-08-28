@@ -63,8 +63,8 @@ pyfr24 export-flight [OPTIONS]
 Options:
   -i, --flight-id TEXT       Flight ID [required]
   -o, --output-dir TEXT     Output directory path
-  --background TEXT         Background map (esri-light, esri-dark, esri-street, esri-topo,
-                            esri-satellite, esri-natgeo, osm, opentopo, mapbox-<style>)
+  --background TEXT         Background map (osm (default), esri-light, esri-dark, esri-street,
+                            esri-topo, esri-satellite, esri-natgeo, opentopo, mapbox-<style>)
   --aspect TEXT             Aspect ratio (16:9, 3:2, 4:3, 1:1, 9:16)
   --orientation TEXT        Legacy orientation (horizontal, vertical, auto); --aspect wins
   --timezone TEXT           Convert timestamps to specified timezone (e.g., America/New_York)
@@ -81,8 +81,8 @@ Options:
   --flight TEXT             Flight number or callsign [required]
   --date TEXT              Date (YYYY-MM-DD) [required]  
   -o, --output-dir TEXT    Output directory path
-  --background TEXT        Background map (esri-light, esri-dark, esri-street, esri-topo,
-                           esri-satellite, esri-natgeo, osm, opentopo, mapbox-<style>)
+  --background TEXT        Background map (osm (default), esri-light, esri-dark, esri-street,
+                           esri-topo, esri-satellite, esri-natgeo, opentopo, mapbox-<style>)
   --aspect TEXT            Aspect ratio (16:9, 3:2, 4:3, 1:1, 9:16)
   --orientation TEXT       Legacy orientation (horizontal, vertical, auto); --aspect wins
   --timezone TEXT          Convert timestamps to specified timezone (e.g., America/New_York)

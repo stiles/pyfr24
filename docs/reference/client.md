@@ -69,7 +69,7 @@ Get live flights filtered by aircraft registration.
 
 ##### export_flight_data
 ```python
-export_flight_data(flight_id, output_dir=None, background='esri-light', orientation=None, aspect=None, timezone=None)
+export_flight_data(flight_id, output_dir=None, background='osm', orientation=None, aspect=None, timezone=None)
 ```
 Export flight track data to multiple formats and create visualizations.
 
@@ -77,7 +77,7 @@ Export flight track data to multiple formats and create visualizations.
 
 - `flight_id` (str): Flightradar24 flight ID
 - `output_dir` (str, optional): Output directory path
-- `background` (str, optional): Basemap key ('esri-light', 'esri-satellite', 'osm', 'mapbox-&lt;style&gt;', ...)
+- `background` (str, optional): Basemap key ('osm' (default), 'esri-light', 'esri-satellite', 'mapbox-&lt;style&gt;', ...)
 - `aspect` (str, optional): Aspect ratio for every graphic ('16:9', '3:2', '4:3', '1:1', '9:16'); defaults to '16:9'
 - `orientation` (str, optional): Legacy orientation ('horizontal', 'vertical', 'auto'); `aspect` wins
 - `timezone` (str, optional): IANA zone to convert timestamps to (e.g., 'America/New_York')

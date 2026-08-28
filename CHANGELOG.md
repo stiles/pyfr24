@@ -2,9 +2,16 @@
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-08-28
+### Changed
+- `osm` is now the default basemap, replacing `esri-light`. OpenStreetMap labels cities and states at the zooms a cross-country route sits at, where the Esri gray canvas drops them, so a map reads without extra annotation. `esri-light` remains available for a quieter frame.
+- OpenStreetMap is credited as "OpenStreetMap contributors" in the source line, the attribution its license asks for.
 
-## [1.0.0] - 2026-08-28
+### Fixed
+- Mapbox backgrounds returned a 404 and rendered a bare route with no basemap. Mapbox style IDs carry a version suffix, so `--background mapbox-light` was requesting the style `mapbox/light`, which doesn't exist. Short names now resolve to the current version (`light` to `light-v11`, `streets` to `streets-v12` and so on); versioned IDs and custom `owner/styleid` styles still pass through untouched.
+- A basemap that fails at tile-request time now falls back to the default rather than saving a map with nothing behind the route, and the source line is rewritten to credit the basemap actually drawn.
+- Corrected `__version__`, which reported 1.0.0 in the 0.2.0 release.
+
+## [0.2.0] - 2026-08-28
 
 ### Added
 - `--aspect` flag and `aspect` argument for `16:9` (default), `3:2`, `4:3`, `1:1` and `9:16`. The saved file matches the ratio exactly, and the map extent expands to fill the frame, so output size no longer varies with the direction of the route.

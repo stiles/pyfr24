@@ -109,7 +109,7 @@ Export complete!
 - **Publication-ready visualizations**:
   - Headline, dek and source line laid out around every map and chart
   - Fixed aspect ratios (16:9, 3:2, 4:3, 1:1, 9:16) that the saved file matches exactly
-  - Key-free map backgrounds from Esri, OpenStreetMap and OpenTopoMap, plus Mapbox with your own token
+  - Key-free map backgrounds from OpenStreetMap (default), Esri and OpenTopoMap, plus Mapbox with your own token
   - Timezone conversion with automatic DST handling
   - AP-style dates and time axes that don't collide
 - **Data export** in multiple formats (CSV, GeoJSON and KML)
