@@ -35,9 +35,8 @@ setup(
     install_requires=[
         'requests',
         'matplotlib',
-        'geopandas',
         'contextily',
-        'shapely',
+        'numpy',
         'pandas',
     ],
     entry_points={
