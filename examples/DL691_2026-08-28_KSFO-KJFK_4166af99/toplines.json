@@ -1,0 +1,16 @@
+{
+  "flight_number": "DL691",
+  "flight_id": "4166af99",
+  "date": "2026-08-28",
+  "origin": "KSFO",
+  "destination": "KJFK",
+  "in_progress": false,
+  "departure_time": "2026-08-28T14:00:41-07:00",
+  "arrival_time": "2026-08-28T19:10:01-07:00",
+  "departure_time_readable": "August 28, 2026, at 2:00 p.m. PT",
+  "arrival_time_readable": "August 28, 2026, at 7:10 p.m. PT",
+  "last_position_time": "2026-08-28T19:10:01-07:00",
+  "last_position_time_readable": "August 28, 2026, at 7:10 p.m. PT",
+  "registration": "N178DN",
+  "aircraft_type": "B763"
+}
