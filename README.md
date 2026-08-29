@@ -61,6 +61,66 @@ pyfr24 smart-export --flight UA2151 --date 2025-04-22 \
                     --aspect 3:2
 ```
 
+### A flight from the news
+
+You have a flight number and a date. `smart-export` handles the lookup and the
+export together, and `--format png,svg` leaves an editable copy of every graphic
+beside the PNG:
+
+```bash
+pyfr24 smart-export --flight DL691 --date 2026-08-28 \
+                    --timezone "America/Los_Angeles" \
+                    --background osm \
+                    --format png,svg
+```
+
+```
+Fetching summary...
+Fetching flight tracks for flight ID: 4166af99
+Converting timestamps to timezone: America/Los_Angeles
+Exporting flight data to directory: data/DL691_2026-08-28_KSFO-KJFK_4166af99
+CSV data saved to data/DL691_2026-08-28_KSFO-KJFK_4166af99/data.csv
+GeoJSON points saved to data/DL691_2026-08-28_KSFO-KJFK_4166af99/points.geojson
+GeoJSON line saved to data/DL691_2026-08-28_KSFO-KJFK_4166af99/line.geojson
+KML file saved to data/DL691_2026-08-28_KSFO-KJFK_4166af99/track.kml
+Map saved to data/DL691_2026-08-28_KSFO-KJFK_4166af99/map.png
+Map saved to data/DL691_2026-08-28_KSFO-KJFK_4166af99/map.svg
+...
+Exporting files...
+
+Exporting flight 4166af99 (DL691) from KSFO to KJFK on 2026-08-28T14:00–2026-08-28T19:10
+Output directory: data/DL691_2026-08-28_KSFO-KJFK_4166af99
+Files created:
+  - data.csv: CSV of flight track points
+  - points.geojson: GeoJSON of track points
+  - line.geojson: GeoJSON LineString connecting the points
+  - track.kml: Flight path in KML format
+  - map.png, map.svg: Map of the flight path
+  - speed.png, speed.svg: Line chart of speed over time
+  - altitude.png, altitude.svg: Line chart of altitude over time
+  - toplines.json: Topline summary of the exported flight
+
+Export complete!
+```
+
+The map that produces, San Francisco to New York over OpenStreetMap:
+
+![Flight path of DL691 from KSFO to KJFK](examples/DL691_2026-08-28_KSFO-KJFK_4166af99/map.png)
+
+Look south of Buffalo and the route ties a small knot. The aircraft flew a full
+circle at 39,000 feet between 6:08 and 6:17 p.m. before carrying on to JFK, and
+the ground speed chart from the same export shows the dip underneath it:
+
+![Ground speed of DL691 from KSFO to KJFK](examples/DL691_2026-08-28_KSFO-KJFK_4166af99/speed.png)
+
+Most of that 145-knot drop is the tailwind the aircraft gave up when it turned
+back into the jet stream rather than any real braking, which
+[`examples/`](examples/) works through. The graphics and `toplines.json` from
+this exact run are committed there.
+
+More worked examples, including several aspect ratios of one flight, Mapbox
+backgrounds and timezone conversion, are in the CLI reference.
+
 **Full CLI reference:** [https://pyfr24.readthedocs.io/en/latest/usage/cli/](https://pyfr24.readthedocs.io/en/latest/usage/cli/)
 
 ## API token
@@ -110,8 +170,12 @@ Export complete!
   - Headline, dek and source line laid out around every map and chart
   - Fixed aspect ratios (16:9, 3:2, 4:3, 1:1, 9:16) that the saved file matches exactly
   - Key-free map backgrounds from OpenStreetMap (default), Esri and OpenTopoMap, plus Mapbox with your own token
+  - Origin and destination marked and labeled on the map, with an aircraft still in the air marked as such rather than as arrived
+  - PNG, SVG and PDF output, with editable type in the vector formats
   - Timezone conversion with automatic DST handling
   - AP-style dates and time axes that don't collide
+  - Gaps in ADS-B coverage left as gaps, including on flights across the date line
+  - Readings no aircraft could have produced dropped rather than drawn, and estimated speeds labeled as estimates
 - **Data export** in multiple formats (CSV, GeoJSON and KML)
 - **Interactive CLI** export by flight number and date (`smart-export` command)
 - **Comprehensive output** including topline summaries (`toplines.json`)

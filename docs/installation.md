@@ -34,9 +34,8 @@ Pyfr24 requires these Python packages:
 
 - requests
 - matplotlib
-- geopandas
 - contextily
-- shapely
+- numpy
 - pandas
 
 These packages install automatically with Pyfr24. 

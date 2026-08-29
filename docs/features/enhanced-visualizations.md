@@ -10,7 +10,7 @@ inside the requested aspect ratio, so the file you get is ready to place.
 
 ```
 Altitude of AA3202 from KMIA to KLAX
-Nov. 2, 2025 · 7 hr 16 min tracked
+Nov. 2, 2025 · 7 hours, 16 minutes tracked
 
   [ chart ]
 
@@ -37,7 +37,26 @@ api.enhanced_plot_flight(
 - **Time axis**: interval chosen from flight duration to land near five labels, so they never collide
 - **Units on the top tick only**: `35,000 feet` at the top, bare numbers below
 - **Honest baseline**: altitude and speed both start at a real zero
+- **Honest gaps**: the line lifts where ADS-B coverage stops, and a missing reading is plotted as missing rather than as zero
 - **Timezone**: named in the source line rather than floating over the plot
+
+### Readings that couldn't be true
+
+A transponder occasionally reports a value no aircraft could have produced. NZ6
+reported 30 knots at 35,000 feet between two readings near 500, which drew a
+cliff to the floor of the speed chart; recovering from it would have taken 0.8 g.
+
+Pyfr24 drops a reading only when the readings either side of it agree with each
+other and it departs from both by more than 200 knots or 5,000 feet. The
+agreement is the safeguard: a real change, however violent, plays out over
+several pings and leaves its neighbors disagreeing, so an emergency descent
+survives while an isolated glitch doesn't. Each one dropped is logged.
+
+Multilateration is a separate problem. It fixes an aircraft from the timing of
+its signal at several receivers, so the speed derived from it wobbles by
+hundreds of knots and no point-by-point filter can rescue it. Where more than a
+tenth of a track is multilaterated, the speed chart says so in the source line
+rather than passing the wobble off as flying.
 
 ## Map backgrounds
 
@@ -130,6 +149,24 @@ pyfr24 smart-export --flight DL562 --date 2025-08-02 --aspect 3:2
 The older `--orientation horizontal|vertical|auto` flag still works and maps to
 `16:9` and `9:16`. `--aspect` takes precedence when both are given.
 
+## Output formats
+
+Graphics are written as PNG by default. `--format` takes a comma-separated list
+of `png`, `svg` and `pdf`, and each graphic is written once per format.
+
+```bash
+pyfr24 smart-export --flight DL562 --date 2025-08-02 --format png,svg
+```
+
+That leaves `map.svg` beside `map.png`, and the same for both charts. The vector
+formats keep the route, the panel border and the chrome as vectors, and leave
+type as live text rather than outlines, so a label can be restyled or retyped in
+Illustrator instead of nudged around as paths. The basemap is raster wherever it
+comes from, so it travels inside the SVG as an embedded image.
+
+An unrecognized format is dropped with a warning rather than failing the export
+at save time.
+
 ## Timezone conversion
 
 Convert all timestamps from UTC to local time zones for easier analysis.
@@ -171,6 +208,9 @@ Each export creates publication-ready files:
 - **`map.png`**: Flight path visualization with enhanced backgrounds
 - **`speed.png`**: Professional speed profile chart
 - **`altitude.png`**: Professional altitude profile chart
+
+With `--format png,svg` each of these is written twice, as `map.png` and
+`map.svg` and so on.
 
 ### Data outputs
 

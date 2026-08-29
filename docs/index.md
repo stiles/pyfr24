@@ -9,10 +9,13 @@ Welcome to the Pyfr24 documentation. This Python package provides an interface t
 - **Enhanced visualizations**: Publication-ready charts and maps with:
     - Professional chart design with clean typography and smart formatting
     - Multiple map backgrounds (OpenStreetMap, Esri satellite/topo, Mapbox)
+    - Origin and destination marked and labeled on the map, with an aircraft still in the air marked as such rather than as arrived
+    - Fixed aspect ratios (16:9, 3:2, 4:3, 1:1, 9:16) the saved file matches exactly
     - Timezone conversion with automatic DST handling
     - Human-readable time labels and date formatting
-    - Orientation options (16:9 horizontal, 9:16 vertical or auto-detect)
-    - High-quality output (300 DPI)
+    - Honest treatment of gaps in ADS-B coverage, including flights across the date line
+    - Readings no aircraft could have produced dropped rather than drawn, and estimated speeds labeled as estimates
+    - PNG, SVG and PDF output, with editable type in the vector formats
 - **Flight analysis**: Create speed and altitude profile charts
 - **Command-line interface**: Access features without writing code
 - **Error handling**: Handle errors and log events
@@ -29,14 +32,13 @@ Welcome to the Pyfr24 documentation. This Python package provides an interface t
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.9+
 - Flightradar24 API subscription
 - Required Python packages:
     - requests
-    - geopandas
     - contextily
     - matplotlib
-    - shapely
+    - numpy
     - pandas
 
 ## Installation
