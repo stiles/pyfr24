@@ -198,7 +198,7 @@ echo "--- Git Operations ---"
 # Commit version changes if any
 if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     git add pyfr24/__init__.py CHANGELOG.md
-    git commit -m "Bump version to $NEW_VERSION"
+    git commit -m "chore(release): v$NEW_VERSION"
     echo "✅ Version bump committed."
 fi
 
