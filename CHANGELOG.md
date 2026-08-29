@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-28
+
 ### Added
 - `--format` flag and `formats` argument, taking a comma-separated list of `png` (default), `svg` and `pdf`. Each graphic is written once per format, so `--format png,svg` leaves `map.svg` beside `map.png`. SVG keeps the route, the chrome and the type as vectors for editing in Illustrator, with the type left as live text rather than outlines; the basemap rides along as an embedded raster, since that's what tiles are.
 - Origin and destination are marked on the map with a dot and their airport code. Labels sit under the dot, since most routes run east to west and a label set alongside lands on the line, and they move above the dot or hug the panel edge where they'd otherwise overflow. These are the first and last fix, which is close to the runway rather than the terminal.
