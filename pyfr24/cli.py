@@ -11,7 +11,16 @@ import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from . import FR24API, configure_logging
-from .viz import ASPECT_RATIOS, BASEMAPS, DEFAULT_BASEMAP, MAPBOX_STYLE_ALIASES
+from .client import flight_in_progress
+from .viz import (
+    ASPECT_RATIOS,
+    BASEMAPS,
+    DEFAULT_BASEMAP,
+    DEFAULT_OUTPUT_FORMATS,
+    MAPBOX_STYLE_ALIASES,
+    OUTPUT_FORMATS,
+    resolve_formats,
+)
 
 ASPECT_CHOICES = list(ASPECT_RATIOS)
 BACKGROUND_HELP = (
@@ -19,6 +28,11 @@ BACKGROUND_HELP = (
     f"With MAPBOX_TOKEN set, also mapbox-<style> where style is one of "
     f"{', '.join(MAPBOX_STYLE_ALIASES)}, a versioned ID like 'light-v11', "
     "or your own 'username/styleid'"
+)
+FORMAT_HELP = (
+    f"Image formats to write, comma separated: {', '.join(OUTPUT_FORMATS)} "
+    f"(default: {DEFAULT_OUTPUT_FORMATS[0]}). SVG keeps the route, the type and "
+    "the chrome as vectors for editing in Illustrator"
 )
 
 def setup_logging(args):
@@ -48,6 +62,26 @@ def get_client(args):
 def format_json(data):
     """Format JSON data for display."""
     return json.dumps(data, indent=2)
+
+def print_export_contents(formats, toplines=False):
+    """List what an export wrote, so the user knows where to look."""
+    print("Files created:")
+    print("  - data.csv: CSV of flight track points")
+    print("  - points.geojson: GeoJSON of track points")
+    print("  - line.geojson: GeoJSON LineString connecting the points")
+    print("  - track.kml: Flight path in KML format")
+
+    graphics = [
+        ("map", "Map of the flight path"),
+        ("speed", "Line chart of speed over time"),
+        ("altitude", "Line chart of altitude over time"),
+    ]
+    for stem, description in graphics:
+        names = ", ".join(f"{stem}.{fmt}" for fmt in formats)
+        print(f"  - {names}: {description}")
+
+    if toplines:
+        print("  - toplines.json: Topline summary of the exported flight")
 
 def _convert_timestamp(ts_str, tz_str):
     """Convert a timestamp string to a different timezone."""
@@ -177,23 +211,18 @@ def export_flight_command(args):
     logger = setup_logging(args)
     api = get_client(args)
     try:
+        formats = resolve_formats(args.formats)
         output_dir = api.export_flight_data(
             args.flight_id, 
             output_dir=args.output_dir,
             background=args.background,
             orientation=args.orientation,
             aspect=args.aspect,
-            timezone=args.timezone
+            timezone=args.timezone,
+            formats=formats
         )
         print(f"Flight data exported to directory: {output_dir}")
-        print("Files created:")
-        print("  - data.csv: CSV of flight track points")
-        print("  - points.geojson: GeoJSON of track points")
-        print("  - line.geojson: GeoJSON LineString connecting the points")
-        print("  - track.kml: Flight path in KML format")
-        print("  - map.png: Map visualization of the flight path")
-        print("  - speed.png: Line chart of speed over time")
-        print("  - altitude.png: Line chart of altitude over time")
+        print_export_contents(formats)
     except Exception as e:
         logger.error(f"Error exporting flight data: {e}")
         print(f"Error: {e}")
@@ -292,6 +321,7 @@ def smart_export_flight_command(args):
     logger = setup_logging(args)
     api = get_client(args)
     try:
+        formats = resolve_formats(args.formats)
         print("Fetching summary...")
                     # Call smart_export_flight with auto_select if provided
         result = api.smart_export_flight(
@@ -303,6 +333,7 @@ def smart_export_flight_command(args):
             aspect=args.aspect,
             auto_select=args.auto_select,
             timezone=args.timezone,
+            formats=formats,
         )
         options = result.get('options', [])
         selected = result.get('selected')
@@ -342,6 +373,7 @@ def smart_export_flight_command(args):
                 aspect=args.aspect,
                 auto_select=sel,
                 timezone=args.timezone,
+                formats=formats,
             )
             selected = result.get('selected')
             output_dir = result.get('output_dir')
@@ -358,6 +390,11 @@ def smart_export_flight_command(args):
             reg = selected.get('reg') or selected.get('registration') or 'N/A'
             typ = selected.get('type') or 'N/A'
             fid = selected.get('fr24_id') or selected.get('id') or 'N/A'
+            # A flight still in the air has no arrival time, and the moment it
+            # was last seen is not one: it's over open country at cruise. This
+            # is the summary's view; compare the last fix in the track, which
+            # can show an aircraft parked while the record is still open.
+            in_progress = flight_in_progress(selected)
             # Write toplines.json
             toplines = {
                 "flight_number": args.flight,
@@ -365,10 +402,13 @@ def smart_export_flight_command(args):
                 "date": args.date,
                 "origin": orig,
                 "destination": dest,
+                "in_progress": in_progress,
                 "departure_time": dep_iso,
-                "arrival_time": arr_iso,
+                "arrival_time": None if in_progress else arr_iso,
                 "departure_time_readable": dep_readable,
-                "arrival_time_readable": arr_readable,
+                "arrival_time_readable": None if in_progress else arr_readable,
+                "last_position_time": arr_iso,
+                "last_position_time_readable": arr_readable,
                 "registration": reg,
                 "aircraft_type": typ
             }
@@ -376,17 +416,13 @@ def smart_export_flight_command(args):
             toplines_path = os.path.join(output_dir, "toplines.json")
             with open(toplines_path, "w") as f:
                 json.dump(toplines, f, indent=2)
-            print(f"\nExporting flight {fid} ({args.flight}) from {orig} to {dest} on {dep_iso[:16]}–{arr_iso[:16]}")
+            # The record, not the track: Flightradar24 can still be holding a
+            # flight open minutes after it parked.
+            span = (f"{dep_iso[:16]}, no arrival time yet" if in_progress
+                    else f"{dep_iso[:16]}–{arr_iso[:16]}")
+            print(f"\nExporting flight {fid} ({args.flight}) from {orig} to {dest} on {span}")
             print(f"Output directory: {output_dir}")
-            print("Files created:")
-            print("  - data.csv: CSV of flight track points")
-            print("  - points.geojson: GeoJSON of track points")
-            print("  - line.geojson: GeoJSON LineString connecting the points")
-            print("  - track.kml: Flight path in KML format")
-            print("  - map.png: Map visualization of the flight path")
-            print("  - speed.png: Line chart of speed over time")
-            print("  - altitude.png: Line chart of altitude over time")
-            print("  - toplines.json: Topline summary of the exported flight")
+            print_export_contents(formats, toplines=True)
             print("\nExport complete!")
         elif error:
             print(f"Error: {error}")
@@ -442,6 +478,7 @@ def create_parser():
     export_flight_parser.add_argument("--background", default=DEFAULT_BASEMAP, help=BACKGROUND_HELP)
     export_flight_parser.add_argument("--aspect", choices=ASPECT_CHOICES, help="Aspect ratio for the map and charts (default: 16:9)")
     export_flight_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], help="Legacy map orientation; --aspect takes precedence")
+    export_flight_parser.add_argument("--format", dest="formats", help=FORMAT_HELP)
     export_flight_parser.add_argument("--timezone", help="Convert UTC timestamps to a specific timezone (e.g., 'America/New_York')")
     export_flight_parser.set_defaults(func=export_flight_command)
     
@@ -480,6 +517,7 @@ def create_parser():
     smart_export_parser.add_argument("--background", default=DEFAULT_BASEMAP, help=BACKGROUND_HELP)
     smart_export_parser.add_argument("--aspect", choices=ASPECT_CHOICES, help="Aspect ratio for the map and charts (default: 16:9)")
     smart_export_parser.add_argument("--orientation", choices=['horizontal', 'vertical', 'auto'], help="Legacy map orientation; --aspect takes precedence")
+    smart_export_parser.add_argument("--format", dest="formats", help=FORMAT_HELP)
     smart_export_parser.add_argument("--auto-select", help="Auto-select: 'latest', 'earliest', or index (for scripting)")
     smart_export_parser.add_argument("--timezone", help="Convert UTC timestamps to a specific timezone (e.g., 'America/New_York')")
     smart_export_parser.set_defaults(func=smart_export_flight_command)

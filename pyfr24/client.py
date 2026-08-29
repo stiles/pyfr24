@@ -20,6 +20,27 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 # Configure logger
 logger = logging.getLogger(__name__)
 
+
+def flight_in_progress(record):
+    """Whether a flight summary record describes a flight that hadn't landed.
+
+    A landing time settles it, and it settles it first: `flight_ended` marks a
+    record as closed out rather than a flight as over, and Flightradar24 leaves
+    it false for a while after the wheels are down. DL691 on Aug. 28, 2026 read
+    `flight_ended: false` alongside a landing time of 02:10 UTC.
+
+    Worth getting right, because the rest of the record reads differently for a
+    flight caught mid-air: the last fix is wherever the aircraft happened to be,
+    and the last time it was seen is not an arrival.
+    """
+    if not record:
+        return False
+    if record.get('datetime_landed'):
+        return False
+    ended = record.get('flight_ended')
+    return True if ended is None else not ended
+
+
 def _create_kml_from_tracks(tracks, flight_id):
     """
     Create a KML string from flight track data.
@@ -359,7 +380,7 @@ class FR24API:
         response = self._make_request("get", url, headers=self.session.headers, params=params)
         return response.json()
 
-    def enhanced_plot_flight(self, sorted_tracks, flight_id, fig_filename=None, orientation=None, aspect=None, pad_factor=0.12, zoom=None, background=DEFAULT_BASEMAP, flight_number=None, origin=None, destination=None, headline=None, dek=None, source=None):
+    def enhanced_plot_flight(self, sorted_tracks, flight_id, fig_filename=None, orientation=None, aspect=None, pad_factor=0.12, zoom=None, background=DEFAULT_BASEMAP, flight_number=None, origin=None, destination=None, headline=None, dek=None, source=None, formats=None, in_progress=None):
         """
         Plot the flight path over a basemap and save it to fig_filename.
 
@@ -373,6 +394,9 @@ class FR24API:
             zoom: Zoom level for the basemap (if None, will be automatically determined)
             background: Basemap key ('osm' (default), 'esri-light', 'esri-satellite', 'mapbox-<style>', ...)
             headline, dek, source: Copy overrides for the graphic
+            formats: Image formats to write ('png', 'svg', 'pdf'); PNG when omitted
+            in_progress: True when the flight hadn't landed, so the end of the line
+                is marked as the aircraft still flying rather than as an arrival
         """
         return plot_flight_map(
             sorted_tracks,
@@ -389,10 +413,12 @@ class FR24API:
             headline=headline,
             dek=dek,
             source=source,
+            formats=formats,
+            in_progress=in_progress,
             log=self.logger,
         )
 
-    def export_flight_data(self, flight_id, output_dir=None, background=DEFAULT_BASEMAP, orientation=None, aspect=None, timezone=None, flight_number=None, origin=None, destination=None):
+    def export_flight_data(self, flight_id, output_dir=None, background=DEFAULT_BASEMAP, orientation=None, aspect=None, timezone=None, flight_number=None, origin=None, destination=None, formats=None, in_progress=None):
         """
         Export flight track data to CSV, GeoJSON (points and line), KML and visualizations.
         Creates a directory named data/flight_id (or specified output_dir) and saves:
@@ -403,7 +429,10 @@ class FR24API:
           - map.png: A map visualization of the flight path.
           - speed.png: A line chart of speed over time.
           - altitude.png: A line chart of altitude over time.
-          
+
+        Each graphic is written once per requested format, so asking for SVG as
+        well leaves map.svg beside map.png.
+
         Args:
             flight_id: Flight identifier
             output_dir: Output directory path
@@ -411,6 +440,8 @@ class FR24API:
             orientation: Legacy 'horizontal', 'vertical' or 'auto'; aspect wins
             aspect: Aspect ratio for every graphic ('16:9', '3:2', '4:3', '1:1', '9:16')
             timezone: IANA zone to convert timestamps to (e.g. 'America/New_York')
+            formats: Image formats to write ('png', 'svg', 'pdf'); PNG when omitted
+            in_progress: True when the flight hadn't landed at the last fix
         """
         # Fetch flight tracks.
         self.logger.info(f"Fetching flight tracks for flight ID: {flight_id}")
@@ -523,35 +554,35 @@ class FR24API:
 
         # Create map visualization
         map_file = os.path.join(output_dir, "map.png")
-        self.enhanced_plot_flight(sorted_tracks, flight_id, fig_filename=map_file, background=background, orientation=orientation, aspect=aspect, flight_number=flight_number, origin=origin, destination=destination)
+        self.enhanced_plot_flight(sorted_tracks, flight_id, fig_filename=map_file, background=background, orientation=orientation, aspect=aspect, flight_number=flight_number, origin=origin, destination=destination, formats=formats, in_progress=in_progress)
         
         # Charts have no 'auto' equivalent, so a legacy orientation resolves to a key here.
         chart_aspect = aspect_key(aspect, orientation)
 
         # Create speed chart
         speed_file = os.path.join(output_dir, "speed.png")
-        self._plot_speed_chart(sorted_tracks, flight_id, speed_file, flight_number=flight_number, origin=origin, destination=destination, timezone=applied_timezone, aspect=chart_aspect)
+        self._plot_speed_chart(sorted_tracks, flight_id, speed_file, flight_number=flight_number, origin=origin, destination=destination, timezone=applied_timezone, aspect=chart_aspect, formats=formats)
         
         # Create altitude chart
         altitude_file = os.path.join(output_dir, "altitude.png")
-        self._plot_altitude_chart(sorted_tracks, flight_id, altitude_file, flight_number=flight_number, origin=origin, destination=destination, timezone=applied_timezone, aspect=chart_aspect)
+        self._plot_altitude_chart(sorted_tracks, flight_id, altitude_file, flight_number=flight_number, origin=origin, destination=destination, timezone=applied_timezone, aspect=chart_aspect, formats=formats)
 
         return output_dir
 
-    def _plot_speed_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None, timezone=None, aspect=None):
+    def _plot_speed_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None, timezone=None, aspect=None, formats=None):
         """Create a line chart of ground speed over time."""
         plot_speed_chart(
             tracks, flight_id, output_file,
             flight_number=flight_number, origin=origin, destination=destination,
-            timezone=timezone, aspect=aspect, log=self.logger,
+            timezone=timezone, aspect=aspect, formats=formats, log=self.logger,
         )
 
-    def _plot_altitude_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None, timezone=None, aspect=None):
+    def _plot_altitude_chart(self, tracks, flight_id, output_file, flight_number=None, origin=None, destination=None, timezone=None, aspect=None, formats=None):
         """Create a line chart of altitude over time."""
         plot_altitude_chart(
             tracks, flight_id, output_file,
             flight_number=flight_number, origin=origin, destination=destination,
-            timezone=timezone, aspect=aspect, log=self.logger,
+            timezone=timezone, aspect=aspect, formats=formats, log=self.logger,
         )
 
     def get_flight_ids_by_registration(self, registration, date_from, date_to, offset=0, limit=20, max_pages=5):
@@ -578,6 +609,7 @@ class FR24API:
         auto_select=None,  # 'latest', 'earliest', or integer index
         summary_mode='full',  # or 'light',
         timezone=None,
+        formats=None,
     ):
         """
         Look up a flight by number and date, select the correct segment if multiple, and export data for the selected flight.
@@ -627,7 +659,7 @@ class FR24API:
                 safe_dest = dest.replace('/', '_')
                 output_dir = f"data/{safe_flight}_{date_str}_{safe_orig}-{safe_dest}_{flight_id}"
             # 4. Export
-            export_dir = self.export_flight_data(flight_id, output_dir=output_dir, background=background, orientation=orientation, aspect=aspect, timezone=timezone, flight_number=flight_number, origin=orig, destination=dest)
+            export_dir = self.export_flight_data(flight_id, output_dir=output_dir, background=background, orientation=orientation, aspect=aspect, timezone=timezone, flight_number=flight_number, origin=orig, destination=dest, formats=formats, in_progress=flight_in_progress(selected))
             return {'output_dir': export_dir, 'selected': selected, 'options': data}
         else:
             # Multiple matches, no auto_select: return options for caller to prompt
